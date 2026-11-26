@@ -101,7 +101,8 @@ function entryCalc(e){
   var flags=[],g=num(C.lateGrace)*6e4;
   if(!sh)flags.push('Not on rota');
   else{if(inT-ss>g)flags.push('Late '+minsTxt((inT-ss)/6e4));
-    if(outT&&se-outT>g)flags.push('Left '+minsTxt((se-outT)/6e4)+' early');}
+    if(outT&&se-outT>g)flags.push('Left '+minsTxt((se-outT)/6e4)+' early');
+    if(outT&&outT-se>g)flags.push('Stayed '+minsTxt((outT-se)/6e4)+' late');}
   if(!outT&&!live)flags.push('No clock-out');
   return {shift:sh,hours:hours,cost:p?(isWeekly(p)?(hours>0?perShift(p,e.date)*onCost():0):hours*num(p.rate)*onCost()):0,breakMin:brk,breakSrc:src,onBreak:onBreak,live:live,missingOut:!outT&&!live,flags:flags};
 }

@@ -117,6 +117,33 @@ h2{font:700 15px/1.2 Montserrat,sans-serif;margin:22px 0 8px;color:var(--mut);te
 .sheet>div{background:#fff;width:100%;border-radius:20px 20px 0 0;padding:20px 18px calc(20px + var(--sb));max-width:640px;margin:0 auto}
 .sheet button{display:block;width:100%;padding:14px;border-radius:12px;border:1px solid var(--line);background:#fff;font-weight:700;margin-top:10px}
 .sheet .danger{color:#b42318}
+main.wide{max-width:none;padding-left:0;padding-right:0}
+main.wide>h1,main.wide>.wnav,main.wide>.segs,main.wide>.note{margin-left:16px;margin-right:16px}
+.segs{display:flex;gap:8px;flex-wrap:wrap}.segs .seg{flex:1 1 200px}
+.gwrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:#fff}
+.grid{display:grid;grid-template-columns:118px repeat(7,minmax(118px,1fr));min-width:944px}
+.gc{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:8px;min-height:62px}
+.gc.first{position:sticky;left:0;background:#fff;z-index:2;box-shadow:2px 0 0 var(--line)}
+.gc.head{background:#fffaf6;min-height:0;position:relative}
+.gc.head b{font-size:20px;margin-right:4px}
+.gc.head .dw{font-size:13px;color:var(--mut)}
+.gc.head .oh{font-size:11px;color:var(--mut);margin-top:2px;white-space:nowrap}
+.gc.td{background:#fdf3ec}.gc.head.td{box-shadow:inset 0 -3px 0 var(--or)}.gc.head.td b,.gc.head.td .dw{color:var(--or-d)}
+.gc.first.corner{background:#fffaf6;font-size:12px;color:var(--mut);display:flex;align-items:flex-end}
+.pn{display:flex;gap:8px;align-items:flex-start}
+.pn .av{width:30px;height:30px;font-size:11px;background:#f4f1ee;color:#4b5866}
+.pn b{display:block;font-size:13px;line-height:1.2;overflow-wrap:anywhere}
+.pn .av{display:none}
+@media(min-width:700px){.pn .av{display:flex}.grid{grid-template-columns:150px repeat(7,minmax(120px,1fr))}.sc .t{font-size:14px}}
+.pn span{font-size:12px;color:var(--mut)}
+.gr.me .gc{background:#fff4ec}.gr.me .gc.first{background:#fff4ec}
+.gr{display:contents}
+.sc{position:relative;border:1px solid #e6dcd3;border-radius:7px;padding:5px 6px 5px 11px;margin-bottom:6px;background:#fff}
+.sc:last-child{margin-bottom:0}
+.sc:before{content:"";position:absolute;left:3px;top:5px;bottom:5px;width:4px;border-radius:2px;background:var(--rc,#999)}
+.sc .t{font-weight:900;font-size:13px;letter-spacing:-.2px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.sc .r{font-size:12px;color:var(--mut)}
+.gnote{font-size:12px;color:var(--mut);margin:8px 16px 0}
 .spin{width:28px;height:28px;border:3px solid var(--or-l);border-top-color:var(--or);border-radius:50%;animation:r 1s linear infinite;margin:40px auto}
 @keyframes r{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.spin,.dots.shake{animation:none}}
@@ -130,7 +157,7 @@ const CFG={url:'https://vvhrtizoncwbuynbrczg.supabase.co',key:'sb_publishable_xO
 const DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],DOWL=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const app=document.getElementById('app');
-const S={token:null,me:null,tab:'mine',week:null,mode:'all',people:[],pickId:null,pin:'',data:{},installEvt:null};
+const S={token:null,me:null,tab:'mine',week:null,mode:'all',view:'grid',wide:false,people:[],pickId:null,pin:'',data:{},installEvt:null};
 function store(k,v){try{v===undefined?localStorage.removeItem(k):localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
 function load(k){try{return JSON.parse(localStorage.getItem(k));}catch(e){return null;}}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
@@ -212,7 +239,7 @@ async function getRange(from,to){
 /* ---------- main app ---------- */
 function shell(inner){
   return '<header class="top"><img src="logo.png" alt="Roots"><div class="who"><b>'+esc(first(S.me.name))+'</b>'+esc(S.updated||'')+'</div><button class="menu" id="menu" aria-label="Menu">⋯</button></header>'+
-    '<main>'+(S.offline?'<div class="note">You’re offline. Showing the rota as it was last loaded.</div>':'')+inner+'</main>'+
+    '<main'+(S.wide?' class="wide"':'')+'>'+(S.offline?'<div class="note">You’re offline. Showing the rota as it was last loaded.</div>':'')+inner+'</main>'+
     '<nav class="tabs"><button data-tab="mine" class="'+(S.tab==='mine'?'on':'')+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>My shifts</button>'+
     '<button data-tab="rota" class="'+(S.tab==='rota'?'on':'')+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Full rota</button></nav>';
 }
@@ -234,9 +261,10 @@ function updTxt(r){if(!r||!r.updated_at)return '';const d=new Date(r.updated_at)
 async function showApp(){
   if(!app.querySelector('main'))app.innerHTML='<div class="spin"></div>';
   try{ S.tab==='rota'?await showRota():await showMine(); }
-  catch(e){app.innerHTML=shell('<div class="note">Can’t load the rota right now. Check your signal and tap ⋯ → Refresh.</div>');bindShell();}
+  catch(e){S.wide=false;app.innerHTML=shell('<div class="note">Can’t load the rota right now. Check your signal and tap ⋯ → Refresh.</div>');bindShell();}
 }
 async function showMine(){
+  S.wide=false;
   const t=today(),from=weekOf(t),to=add(from,55);
   const r=await getRange(from,to);if(!r)return;S.updated=updTxt(r);
   const mine=r.shifts.filter(x=>x.staff===S.me.id&&x.type!=='leave');
@@ -263,19 +291,41 @@ async function showRota(){
   const ws=S.week,we=add(ws,6),t=today();
   const r=await getRange(ws,we);if(!r)return;S.updated=updTxt(r);
   const people={};(r.people||[]).forEach(p=>people[p.id]=p);
+  const days=[0,1,2,3,4,5,6].map(i=>add(ws,i));
+  const shifts=(r.shifts||[]).filter(x=>x.type!=='leave');
+  S.wide=S.view==='grid';
   let h='<h1>Full rota</h1><div class="wnav"><button id="pw" aria-label="Previous week">‹</button><div class="rng">'+esc(rangeTxt(ws))+'</div><button id="nw" aria-label="Next week">›</button>'+(ws!==weekOf(t)?'<button class="now" id="tw">Today</button>':'')+'</div>'+
-    '<div class="seg"><button data-m="all" class="'+(S.mode==='all'?'on':'')+'">Everyone</button><button data-m="me" class="'+(S.mode==='me'?'on':'')+'">Just me</button></div>';
-  for(let i=0;i<7;i++){const d=add(ws,i);const dd=parse(d);
-    let list=r.shifts.filter(x=>x.date===d&&x.type!=='leave');if(S.mode==='me')list=list.filter(x=>x.staff===S.me.id);
+    '<div class="segs"><div class="seg"><button data-v="grid" class="'+(S.view==='grid'?'on':'')+'">Grid</button><button data-v="list" class="'+(S.view==='list'?'on':'')+'">By day</button></div>'+
+    '<div class="seg"><button data-m="all" class="'+(S.mode==='all'?'on':'')+'">Everyone</button><button data-m="me" class="'+(S.mode==='me'?'on':'')+'">Just me</button></div></div>';
+  if(S.view==='grid'){
+    let ppl=(r.people||[]).slice();
+    if(S.mode==='me')ppl=ppl.filter(p=>p.id===S.me.id);
+    else{const mine=ppl.find(p=>p.id===S.me.id);ppl=ppl.filter(p=>p.id!==S.me.id);ppl.sort((a,b)=>{const ca=shifts.some(x=>x.staff===a.id),cb=shifts.some(x=>x.staff===b.id);return (cb-ca)||a.name.localeCompare(b.name);});if(mine)ppl.unshift(mine);}
+    h+='<div class="gwrap"><div class="grid"><div class="gc first head corner">Staff</div>';
+    days.forEach(d=>{const dd=parse(d),oh=(r.hours||{})[String(dd.getDay())]||{};
+      h+='<div class="gc head'+(d===t?' td':'')+'"><b>'+dd.getDate()+'</b><span class="dw">'+DOWL[dd.getDay()]+'</span><div class="oh">'+(oh.open&&oh.close?'Open '+esc(oh.open)+'–'+esc(oh.close):'Closed')+'</div></div>';});
+    ppl.forEach(p=>{const mine=shifts.filter(x=>x.staff===p.id);const tot=mine.reduce((a,x)=>a+hrs(x),0);
+      const rl=roleOf(r,p.role);
+      h+='<div class="gr'+(p.id===S.me.id?' me':'')+'"><div class="gc first"><div class="pn"><span class="av" style="box-shadow:inset 0 0 0 2px '+esc(rl.color)+'">'+esc(initials(p.name))+'</span><div><b>'+esc(p.name)+(p.id===S.me.id?' (you)':'')+'</b><span>'+(mine.length?mine.length+' shift'+(mine.length===1?'':'s')+' · '+hm(tot):'Not on this week')+'</span></div></div></div>';
+      days.forEach(d=>{const cell=mine.filter(x=>x.date===d);
+        h+='<div class="gc'+(d===t?' td':'')+'">'+cell.map(x=>{const c=roleOf(r,x.role);return '<div class="sc" style="--rc:'+esc(c.color)+'"><div class="t">'+esc(x.start)+'–'+esc(x.end)+'</div><div class="r">'+esc(c.name)+'</div></div>';}).join('')+'</div>';});
+      h+='</div>';});
+    h+='</div></div><div class="gnote">Swipe sideways to see the whole week.</div>';
+  }else{
+  for(const d of days){const dd=parse(d);
+    let list=shifts.filter(x=>x.date===d);if(S.mode==='me')list=list.filter(x=>x.staff===S.me.id);
     const oh=(r.hours||{})[String(dd.getDay())]||{};
     h+='<div class="dayc'+(d===t?' today':'')+'"><div class="dh"><b>'+esc(dayTxt(d,true))+(d===t?'<span class="tag">Today</span>':'')+'</b><span>'+(oh.open&&oh.close?'Open '+esc(oh.open)+'–'+esc(oh.close):'')+'</span></div>'+
       (list.length?list.map(x=>{const p=people[x.staff]||{name:'?'},rl=roleOf(r,x.role);
         return '<div class="ps'+(x.staff===S.me.id?' me':'')+'"><span class="bar" style="background:'+esc(rl.color)+'"></span><div><div class="n">'+esc(p.name)+'</div><div class="rl">'+esc(rl.name)+'</div></div><div class="tm">'+esc(x.start)+' – '+esc(x.end)+'</div></div>';}).join(''):'<div class="empty">'+(S.mode==='me'?'You’re not on':'Nobody on the rota yet')+'</div>')+'</div>';}
+  }
   app.innerHTML=shell(h);bindShell();
   app.querySelector('#pw').addEventListener('click',()=>{S.week=add(S.week,-7);showApp();});
   app.querySelector('#nw').addEventListener('click',()=>{S.week=add(S.week,7);showApp();});
   const tw=app.querySelector('#tw');if(tw)tw.addEventListener('click',()=>{S.week=weekOf(today());showApp();});
-  app.querySelectorAll('.seg button').forEach(b=>b.addEventListener('click',()=>{S.mode=b.dataset.m;showApp();}));
+  app.querySelectorAll('[data-m]').forEach(b=>b.addEventListener('click',()=>{S.mode=b.dataset.m;showApp();}));
+  app.querySelectorAll('[data-v]').forEach(b=>b.addEventListener('click',()=>{S.view=b.dataset.v;store('view',S.view);showApp();}));
+  if(S.view==='grid'&&ws===weekOf(t)){const g=app.querySelector('.gwrap'),c=app.querySelector('.gc.head.td');if(g&&c&&c.offsetLeft+c.offsetWidth>g.clientWidth)g.scrollLeft=c.offsetLeft-140;}
 }
 function rangeTxt(ws){const a=parse(ws),b=parse(add(ws,6));return a.getDate()+(a.getMonth()!==b.getMonth()?' '+MON[a.getMonth()]:'')+' – '+b.getDate()+' '+MON[b.getMonth()];}
 async function logout(expired){
@@ -303,7 +353,7 @@ window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();S.installEv
 /* ---------- start ---------- */
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&S.token)showApp();});
-S.token=load('token');S.me=load('me');S.week=weekOf(today());
+S.token=load('token');S.me=load('me');S.view=load('view')||'grid';S.week=weekOf(today());
 if(S.token&&S.me)showApp();else showPeople();
 }
 </script>

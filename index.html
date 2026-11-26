@@ -66,6 +66,22 @@ h2{font:700 15px/1.2 Montserrat,sans-serif;margin:22px 0 8px;color:var(--mut);te
 .next .day{font:700 20px/1.2 Montserrat,sans-serif;margin:6px 0 2px}
 .next .time{font:900 clamp(38px,11vw,52px)/1 Lato,sans-serif;letter-spacing:-.5px;margin:6px 0 8px;white-space:nowrap}
 .next .meta{font-size:15px;opacity:.95}
+.clk{background:#fff;border:1px solid var(--line);border-radius:22px;padding:16px 18px 18px;margin-bottom:14px}
+.clk .ct{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.clk .ct b{font:700 16px Montserrat,sans-serif}
+.clk .ct span{font:900 28px Lato,sans-serif;font-variant-numeric:tabular-nums}
+.clk .cs{font-size:15px;color:var(--mut);margin:4px 0 12px}
+.clk .cs b{color:var(--ink)}
+.clk .cs .dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#1f9d55;margin-right:6px;vertical-align:1px}
+.clk .cs .dot.brk{background:#e0a100}
+.cbtns{display:flex;gap:10px}
+.cbtns button{flex:1;border:0;border-radius:14px;padding:16px 10px;font-weight:900;font-size:17px;color:#fff;background:#1f9d55;min-height:56px}
+.cbtns button.out{background:#b42318}.cbtns button.brk{background:#e8a500;color:#1f2a37}
+.cbtns button.sure{outline:3px solid #1f2a37;outline-offset:2px}
+.cbtns button[disabled]{opacity:.55}
+.cmsg{font-size:14px;margin-top:10px;min-height:0;line-height:1.4}
+.cmsg.err{color:#b42318;font-weight:700}
+.cmsg.ok{color:#1f7a3f;font-weight:700}
 .next.none{background:#fff;color:var(--ink);box-shadow:none;border:1px solid var(--line)}
 /* lists */
 .wk{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden}
@@ -266,11 +282,12 @@ async function showApp(){
 async function showMine(){
   S.wide=false;
   const t=today(),from=weekOf(t),to=add(from,55);
-  const r=await getRange(from,to);if(!r)return;S.updated=updTxt(r);
+  const [r,ck]=await Promise.all([getRange(from,to),rpc('rota_my_clock',{p_token:S.token}).catch(()=>null)]);if(!r)return;S.updated=updTxt(r);
+  S.clock=ck;
   const mine=r.shifts.filter(x=>x.staff===S.me.id&&x.type!=='leave');
   const upcoming=mine.filter(x=>x.date>t||(x.date===t&&mins(x.end)>nowMins()));
   const nx=upcoming[0];
-  let h='<h1>My shifts</h1>';
+  let h='<h1>My shifts</h1>'+clockHtml(S.clock,r,mine);
   if(nx){const rl=roleOf(r,nx.role);const isT=nx.date===t,isTm=nx.date===add(t,1);
     h+='<div class="next"><div class="lab">'+(isT?'TODAY':isTm?'TOMORROW':'NEXT SHIFT')+'</div><div class="day">'+esc(dayTxt(nx.date,true))+'</div><div class="time">'+esc(nx.start)+' – '+esc(nx.end)+'</div><div class="meta">'+esc(rl.name)+(rl.name?' · ':'')+hm(hrs(nx))+'</div></div>';}
   else h+='<div class="next none"><div class="day">No shifts coming up</div><div class="muted">New shifts appear here as soon as the rota is published.</div></div>';
@@ -284,7 +301,7 @@ async function showMine(){
       list.map(x=>{const d=parse(x.date),rl=roleOf(r,x.role),past=x.date<t||(x.date===t&&mins(x.end)<=nowMins());
         return '<div class="row'+(past?' past':'')+(x.date===t?' today':'')+'"><div class="d"><span>'+DOW[d.getDay()]+'</span><b>'+d.getDate()+'</b></div><div><div class="t">'+esc(x.start)+' – '+esc(x.end)+(x.date===t?'<span class="tag">Today</span>':'')+'</div><div class="chip"><i style="background:'+esc(rl.color)+'"></i>'+esc(rl.name)+'</div></div><div class="h">'+hm(hrs(x))+'</div></div>';}).join('')+
       '</div><div class="sum"><span>'+list.length+' shift'+(list.length===1?'':'s')+'</span><span>'+hm(tot)+'</span></div>';});
-  app.innerHTML=shell(h);bindShell();bindInstall();
+  app.innerHTML=shell(h);bindShell();bindInstall();bindClock();
 }
 function nowMins(){const d=new Date();return d.getHours()*60+d.getMinutes();}
 async function showRota(){
@@ -334,6 +351,56 @@ async function logout(expired){
   if(t&&!expired)try{await rpc('rota_logout',{p_token:t});}catch(e){}
   showPeople();
 }
+
+/* ---------- clock in from phone ---------- */
+function hhmm(iso){const d=new Date(iso);return pad(d.getHours())+':'+pad(d.getMinutes());}
+function clockHtml(c,r,mine){
+  if(!c||!c.ok||!c.enabled)return '';
+  const t=today(),todays=mine.filter(x=>x.date===t);
+  const st=c.status;let line,btns;
+  if(st==='in'){line='<span class="dot"></span><b>Clocked in</b> since '+esc(hhmm(c.inAt));btns='<button class="brk" data-ck="break">Start break</button><button class="out" data-ck="out">Clock out</button>';}
+  else if(st==='break'){line='<span class="dot brk"></span><b>On break</b> since '+esc(hhmm(c.breakAt));btns='<button class="brk" data-ck="endbreak">End break</button><button class="out" data-ck="out">Clock out</button>';}
+  else{line=st==='done'?'You clocked out at <b>'+esc(hhmm(c.outAt))+'</b>.':'You’re not clocked in.';
+    line+=' '+(todays.length?'Today: '+todays.map(x=>esc(x.start)+'–'+esc(x.end)).join(', '):'You’re not on the rota today.');
+    btns='<button data-ck="in">Clock in</button>';}
+  return '<div class="clk" id="clk"><div class="ct"><b>Clock in / out</b><span id="clk-now">'+hhmm(new Date().toISOString())+'</span></div><div class="cs">'+line+'</div><div class="cbtns">'+btns+'</div><div class="cmsg" id="cmsg">You need to be at Roots. Your phone will ask to use your location.</div></div>';
+}
+function bindClock(){
+  const box=app.querySelector('#clk');if(!box)return;
+  box.querySelectorAll('[data-ck]').forEach(b=>b.addEventListener('click',()=>{
+    const a=b.dataset.ck;
+    if(a==='out'&&!b.classList.contains('sure')){b.classList.add('sure');b.textContent='Tap again to clock out';setTimeout(()=>{if(b.isConnected){b.classList.remove('sure');b.textContent='Clock out';}},4000);return;}
+    doClock(a);}));
+}
+function clockMsg(t,cls){const m=app.querySelector('#cmsg');if(m){m.className='cmsg'+(cls?' '+cls:'');m.textContent=t;}}
+function distTxt(m){return m>=1000?(m/1000).toFixed(1)+' km':Math.round(m/10)*10+' m';}
+function locHelp(){const ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
+  return ios?'Location is blocked for this app. On your iPhone go to Settings → Privacy & Security → Location Services → Safari Websites → While Using the App, then try again.'
+            :'Location is blocked for this app. Tap the lock or ⓘ by the address (or long-press the app icon → App info → Permissions) and allow Location, then try again.';}
+let clocking=false;
+function doClock(a){
+  if(clocking)return;clocking=true;
+  app.querySelectorAll('[data-ck]').forEach(x=>x.disabled=true);
+  clockMsg('Checking you’re at Roots…');
+  const fail=(t)=>{clocking=false;app.querySelectorAll('[data-ck]').forEach(x=>x.disabled=false);clockMsg(t,'err');};
+  if(!navigator.geolocation)return fail('This phone can’t share its location. Please use the clock-in tablet at the counter.');
+  navigator.geolocation.getCurrentPosition(async pos=>{
+    try{
+      const c=pos.coords;
+      const r=await rpc('rota_phone_clock',{p_token:S.token,p_action:a,p_lat:c.latitude,p_lng:c.longitude,p_acc:c.accuracy});
+      if(r.ok){clocking=false;
+        const what={in:'Clocked in',break:'Break started',endbreak:'Break ended',out:'Clocked out'}[a];
+        S.flash=what+' at '+hhmm(r.at)+' ✓';await showApp();clockMsg(S.flash,'ok');S.flash=null;return;}
+      if(r.error==='session'){clocking=false;return logout(true);}
+      if(r.error==='too_far')return fail('You need to be at Roots to do this. Your phone says you’re about '+distTxt(r.dist)+' away.');
+      if(r.error==='inaccurate')return fail('Your phone couldn’t get a precise location (±'+distTxt(r.acc)+'). Turn on Wi-Fi and Precise Location, step outside the kitchen if needed, then try again.');
+      if(r.error==='disabled')return fail('Clocking in by phone is turned off. Please use the clock-in tablet at the counter.');
+      if(r.error==='already_in'||r.error==='not_in'||r.error==='already_break'){clocking=false;await showApp();return clockMsg('That had already been done, here’s where you are now.','err');}
+      fail('Something went wrong. Try again, or use the tablet at the counter.');
+    }catch(e){fail('No connection. Check your signal and try again.');}
+  },err=>{fail(err.code===1?locHelp():'Couldn’t find your location. Make sure Location is on and try again.');},{enableHighAccuracy:true,timeout:20000,maximumAge:0});
+}
+setInterval(()=>{const n=document.getElementById('clk-now');if(n)n.textContent=hhmm(new Date().toISOString());},10000);
 
 /* ---------- add to home screen ---------- */
 function standalone(){return window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;}

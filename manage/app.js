@@ -42,7 +42,8 @@ var pinFails=0, pinLockUntil=0, kioskIdleT=null;
 
 function ensureClock(){var c=state.settings.clock||{};
   state.settings.clock={payFromShiftStart:c.payFromShiftStart!==false,capAtShiftEnd:!!c.capAtShiftEnd,useRotaBreak:c.useRotaBreak!==false,
-    lateGrace:c.lateGrace==null||c.lateGrace===''?5:num(c.lateGrace),managerPin:c.managerPin||'',startDate:c.startDate||''};}
+    lateGrace:c.lateGrace==null||c.lateGrace===''?5:num(c.lateGrace),managerPin:c.managerPin||'',startDate:c.startDate||'',
+    phone:{enabled:!(c.phone&&c.phone.enabled===false),lat:(c.phone&&c.phone.lat)||51.5533222,lng:(c.phone&&c.phone.lng)||0.2472603,radius:(c.phone&&num(c.phone.radius))||150}};}
 function clk(){if(!state.settings.clock)ensureClock();return state.settings.clock;}
 function todayS(){return fmtD(new Date());}
 function mondayKey(s){var d=parseD(s);return addDays(s,-((d.getDay()+6)%7));}
@@ -233,7 +234,7 @@ function tsCellHtml(d,p,ready){
   ents.forEach(function(e){var x=entryCalc(e);var cls=x.live?'live':(x.flags.length?'warn':(e.approved?'ok':''));
     h+='<div class="card tcard '+cls+'" data-act="tedit" data-id="'+esc(e.id)+'" data-date="'+esc(e.date)+'">'+
       '<div class="t">'+tOf(e.inAt)+' – '+(e.outAt?tOf(e.outAt):(x.live?(x.onBreak?'on break':'in now'):'??'))+(e.approved?' <span class="tick">✓</span>':'')+'</div>'+
-      '<div class="r">'+hm(x.hours)+' paid'+(x.breakMin>=1?' · '+minsTxt(x.breakMin)+' break'+(x.breakSrc==='rota'?' (rota)':''):'')+(e.edited?' · edited':'')+'</div>'+
+      '<div class="r">'+hm(x.hours)+' paid'+(x.breakMin>=1?' · '+minsTxt(x.breakMin)+' break'+(x.breakSrc==='rota'?' (rota)':''):'')+(e.edited?' · edited':'')+(e.src==='phone'?' · 📱 phone':'')+'</div>'+
       (x.flags.length?'<div class="w">⚠ '+esc(x.flags.join(', '))+'</div>':'')+'</div>';});
   miss.forEach(function(s){h+='<div class="card tcard warn miss" data-act="tadd" data-date="'+d+'" data-staff="'+p.id+'" data-shift="'+esc(s.id)+'"><div class="w">⚠ Didn’t clock in</div><div class="r">Rota’d '+esc(s.start)+'–'+esc(s.end)+' · add time</div></div>';});
   if(!readOnly)h+='<span class="plus">+</span>';
@@ -321,6 +322,10 @@ function clockSettingsModal(){
     '<label class="chk"><input type="checkbox" name="payFromShiftStart"'+(C.payFromShiftStart?' checked':'')+'> Don’t pay before the rota start time (clocking in early)</label>'+
     '<label class="chk"><input type="checkbox" name="capAtShiftEnd"'+(C.capAtShiftEnd?' checked':'')+'> Don’t pay after the rota finish time (you add overtime by editing)</label>'+
     '<label class="chk"><input type="checkbox" name="useRotaBreak"'+(C.useRotaBreak?' checked':'')+'> If no break is clocked, take off the rota’d unpaid break</label>'+
+    '<h4 class="sec">Clock in from staff phones</h4>'+
+    '<label class="chk"><input type="checkbox" name="phoneOn"'+(C.phone.enabled?' checked':'')+'> Let staff clock in and out from the staff app on their phone</label>'+
+    '<div class="f"><label>They must be within (metres of Roots)</label><input type="number" min="50" max="1000" step="10" name="phoneRadius" value="'+esc(C.phone.radius)+'"></div>'+
+    '<div class="hint">Their phone shares its location when they tap the button. 150 m covers the building and the pavement outside.</div>'+
     '<div class="f" style="margin-top:12px"><label>Staff PINs (4 digits, each different)</label><div id="pins">'+pinRows()+'</div></div>'+
     '<div class="hint">Changes are saved straight away so the clock-in screen picks them up.</div>'+
     '<div class="acts"><button class="btn" data-m="cancel">Cancel</button><button class="btn primary" data-m="ok">Save</button></div>',
@@ -338,6 +343,7 @@ function clockSettingsModal(){
       state.staff.forEach(function(p){p.pin=pins[p.id];});
       C.managerPin=mp;C.lateGrace=num(b.querySelector('[name=lateGrace]').value);C.startDate=b.querySelector('[name=startDate]').value;
       C.payFromShiftStart=b.querySelector('[name=payFromShiftStart]').checked;C.capAtShiftEnd=b.querySelector('[name=capAtShiftEnd]').checked;C.useRotaBreak=b.querySelector('[name=useRotaBreak]').checked;
+      C.phone.enabled=b.querySelector('[name=phoneOn]').checked;C.phone.radius=Math.max(50,Math.min(1000,num(b.querySelector('[name=phoneRadius]').value)||150));
       closeModal();markDirty();render();save();};
   });
 }

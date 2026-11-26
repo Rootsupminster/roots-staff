@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Roots Manager</title>
+<meta name="theme-color" content="#b9531a">
+<meta name="robots" content="noindex">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Roots Manager">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="../icon-192.png">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=Montserrat:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css?v=1">
+</head>
+<body>
+<div id="root"><div class="loading">Loading…</div></div>
+<div id="modal"></div>
+<div id="toast"></div>
+<script src="supabase.js?v=2.119.0"></script>
+<script src="app.js?v=1"></script>
+<script>
+{
+  const SB_URL = 'https://vvhrtizoncwbuynbrczg.supabase.co';
+  const SB_KEY = 'sb_publishable_xOqrqL8x9zRexvIXeUZORg_NVw4vOMM';
+  const sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true, storageKey: 'roots-manager-auth' } });
+  const root = document.getElementById('root');
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  let started = false;
+
+  function signInForm(msg, ok, mode) {
+    document.body.className = '';
+    const reset = mode === 'reset', newpw = mode === 'newpw';
+    root.innerHTML = '<div class="signin"><div class="sbox"><div class="hd"><img src="../logo.png" alt="Roots"><div>MANAGER</div></div>' +
+      '<form id="f" autocomplete="on">' +
+      (newpw ? '<h1>Set a new password</h1><p>Choose a password of at least 8 characters.</p><label for="pw">New password</label><input id="pw" type="password" autocomplete="new-password" minlength="8" required>'
+        : '<h1>' + (reset ? 'Reset your password' : 'Sign in') + '</h1><p>' + (reset ? 'We’ll email you a link to set a new password.' : 'Use the same login as the table bookings system.') + '</p>' +
+          '<label for="em">Email</label><input id="em" type="email" autocomplete="username" required>' +
+          (reset ? '' : '<label for="pw">Password</label><input id="pw" type="password" autocomplete="current-password" required>')) +
+      '<button class="go" type="submit">' + (newpw ? 'Save password' : reset ? 'Send reset link' : 'Sign in') + '</button>' +
+      '<div class="msg' + (ok ? ' ok' : '') + '">' + esc(msg || '') + '</div>' +
+      (newpw ? '' : '<button type="button" class="lnk" id="sw">' + (reset ? '← Back to sign in' : 'Forgot password?') + '</button>') +
+      '</form></div></div>';
+    const f = document.getElementById('f'), sw = document.getElementById('sw');
+    if (sw) sw.onclick = () => signInForm('', false, reset ? '' : 'reset');
+    f.onsubmit = async e => {
+      e.preventDefault();
+      const btn = f.querySelector('.go'), m = f.querySelector('.msg');
+      btn.disabled = true; m.className = 'msg'; m.textContent = '';
+      try {
+        if (newpw) {
+          const { error } = await sb.auth.updateUser({ password: f.querySelector('#pw').value });
+          if (error) throw error;
+          history.replaceState(null, '', location.pathname);
+          return boot();
+        }
+        const email = f.querySelector('#em').value.trim();
+        if (reset) {
+          const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+          if (error) throw error;
+          return signInForm('If that email has a login, a reset link is on its way.', true, 'reset');
+        }
+        const { error } = await sb.auth.signInWithPassword({ email, password: f.querySelector('#pw').value });
+        if (error) throw error;
+        await boot();
+      } catch (err) {
+        btn.disabled = false;
+        m.textContent = /invalid login/i.test(err.message || '') ? 'Email or password is wrong.' : (err.message || 'Something went wrong. Try again.');
+      }
+    };
+    const first = f.querySelector('input'); if (first) first.focus();
+  }
+
+  async function boot() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) return signInForm();
+    if (started) return;
+    root.innerHTML = '<div class="loading">Loading the rota…</div>';
+    const who = await sb.rpc('rota_whoami');
+    if (who.error) return signInForm('Can’t reach the rota. Check your connection and try again.');
+    if (!who.data || !who.data.manager) {
+      await sb.auth.signOut();
+      return signInForm('This login isn’t set up as a manager. Ask the owner to give you manager access.');
+    }
+    const st = await sb.rpc('rota_load');
+    if (st.error || !st.data || !st.data.ok) return signInForm('Couldn’t load the rota. Try again.');
+    started = true;
+    window.startRota({ sb, state: st.data.state, version: st.data.version, me: { name: who.data.name, email: session.user.email } });
+  }
+
+  sb.auth.onAuthStateChange((event) => {
+    if (event === 'PASSWORD_RECOVERY') signInForm('', false, 'newpw');
+    if (event === 'SIGNED_OUT' && started) location.replace(location.pathname);
+  });
+  if (/type=recovery/.test(location.hash)) { /* the PASSWORD_RECOVERY event will show the form */ } else boot();
+}
+</script>
+</body>
+</html>

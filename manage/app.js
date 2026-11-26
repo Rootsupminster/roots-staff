@@ -35,7 +35,7 @@ function shiftCost(s){if(!s.staffId||s.type==='leave')return 0;var p=person(s.st
 function initials(n){return String(n||'?').split(/\s+/).filter(Boolean).slice(0,2).map(function(w){return w[0].toUpperCase();}).join('');}
 
 /* ---------- clock in / timesheets ---------- */
-var view='rota', db=null, downloadsApi=null, dbState='wait', dbSlow=false;
+var canMoney=false, view='rota', db=null, downloadsApi=null, dbState='wait', dbSlow=false;
 var TS={}, tsSubs={}, tsLoaded={}, tsOrder=[], tsTimer=null, writeChains={}, pendingRender=false;
 var KIOSK_KEY='roots-kiosk';
 var pinFails=0, pinLockUntil=0, kioskIdleT=null;
@@ -160,6 +160,7 @@ function headerHtml(){
   return '<header class="top"><div class="brand"><img src="'+LOGO+'" alt="'+esc(state.settings.venue||"Roots")+'"><span class="sub">Rota &amp; Labour</span></div>'+
     '<nav class="tabs"><button data-act="view-rota" class="'+(view==='rota'?'on':'')+'">Rota</button><button data-act="view-times" class="'+(view==='times'?'on':'')+'">Timesheets</button><button data-act="view-staff" class="'+(view==='staff'?'on':'')+'">Staff</button><button data-act="view-clock">Clock-in screen ↗</button></nav>'+
     '<div class="spacer"></div><span id="status" class="status"></span>'+
+    (canMoney?'<a class="btn" href="../money/" style="text-decoration:none;color:#1f2a37">Money</a>':'')+
     '<button id="savebtn" class="btn primary" data-act="save">Save changes</button>'+
     '<details class="menu acct"><summary class="btn">'+esc(me.name||'Account')+' ▾</summary><div class="pop"><button data-act="signout">Sign out<span class="sub">'+esc(me.email||'')+'</span></button></div></details></header>';
 }
@@ -830,5 +831,7 @@ window.addEventListener('hashchange',function(){var v=hashView(),w=hashWeek();va
 function kioskLocked(){var f=false;try{f=localStorage.getItem(KIOSK_KEY)==='1';}catch(_){}return f&&!!clk().managerPin;}
 ['pointerdown','keydown'].forEach(function(ev){document.addEventListener(ev,kioskIdle,true);});
 db=makeDb(sb);dbState='wait';syncWatch();render();setStatus();
+// Owner-only link to the money page; the database decides who gets it.
+sb.rpc('money_allowed').then(function(r){if(r&&r.data===true){canMoney=true;render();setStatus();}},function(){});
 downloadsApi={save:function(o){try{var blob=new Blob([o.data],{type:'text/csv'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=o.filename;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},1000);return Promise.resolve();}catch(e){return Promise.reject(e);}}};
 };

@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Roots Money</title>
+<meta name="theme-color" content="#b9531a">
+<meta name="robots" content="noindex">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Roots Money">
+<link rel="icon" href="../icon-192.png">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=Montserrat:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Lato,system-ui,sans-serif;background:#f4f6f9;color:#1f2a37;font-size:15px}
+button,input,select{font:inherit;color:inherit}
+.loading{padding:60px;text-align:center;color:#6b7785}
+.top{background:#b9531a;color:#fff;display:flex;align-items:center;gap:14px;padding:10px 18px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:14px}
+.brand img{height:40px;display:block}
+.brand .sub{font:600 12px Montserrat,sans-serif;letter-spacing:3px;text-transform:uppercase;border-bottom:1px solid rgba(255,255,255,.7);padding-bottom:4px}
+.spacer{flex:1}
+.status{font-size:12px;color:#fbeee4}
+.status.err{color:#fff;font-weight:700;background:#b42318;padding:3px 8px;border-radius:6px}
+.tabs{display:flex;gap:4px}
+.tabs button{background:transparent;border:0;color:#fbeee4;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:700}
+.tabs button.on{background:#fff8f2;color:#6e2f0c}
+.btn{border:1px solid #d5dbe3;background:#fff;border-radius:8px;padding:7px 12px;cursor:pointer;white-space:nowrap}
+.btn:hover{background:#f0f3f7}
+.btn.primary{background:#b9531a;border-color:#b9531a;color:#fff;font-weight:700}
+.btn.primary:hover{background:#9e4514}
+.btn.danger{color:#b42318;border-color:#f1c4bf}
+.btn.small{padding:4px 8px;font-size:13px}
+.top .btn{background:transparent;color:#fff;border-color:rgba(255,255,255,.5)}
+.wrap{max-width:1000px;margin:0 auto;padding:18px}
+.weeknav{display:flex;align-items:center;justify-content:center;gap:0;margin:0 auto 16px;border:1px solid #d5dbe3;border-radius:10px;overflow:hidden;background:#fff;width:max-content;max-width:100%}
+.weeknav button{border:0;background:#fff;padding:10px 16px;cursor:pointer;font-size:18px}
+.weeknav button:hover{background:#f0f3f7}
+.weeknav .range{padding:0 14px;font-weight:700;text-align:center;min-width:220px}
+.weeknav .range small{display:block;font-weight:400;color:#6b7785;font-size:12px}
+.card{background:#fff;border:1px solid #e3e7ee;border-radius:14px;margin-bottom:16px;overflow:hidden}
+.card h2{font:700 16px Montserrat,sans-serif;margin:0;padding:14px 16px;border-bottom:1px solid #e3e7ee;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.card h2 .r{margin-left:auto;font:400 13px Lato,sans-serif;color:#6b7785}
+.card .body{padding:14px 16px}
+.hint{color:#6b7785;font-size:13px}
+table{width:100%;border-collapse:collapse}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid #eef1f5;vertical-align:middle}
+th{font-size:12px;color:#6b7785;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.tot td{font-weight:900;border-top:2px solid #d5dbe3;border-bottom:0}
+input.m{width:110px;text-align:right;padding:8px 10px;border:1px solid #d5dbe3;border-radius:8px;font-variant-numeric:tabular-nums}
+input.m:focus,input.t:focus,select:focus{outline:2px solid #f0b58f;border-color:#b9531a}
+input.t{padding:8px 10px;border:1px solid #d5dbe3;border-radius:8px;width:100%}
+select{padding:8px;border:1px solid #d5dbe3;border-radius:8px;background:#fff}
+.big{font:900 26px Montserrat,sans-serif}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:#fff;border:1px solid #e3e7ee;border-radius:14px;padding:14px 16px}
+.kpi .l{font-size:12px;color:#6b7785;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.kpi .v{font:800 22px Montserrat,sans-serif;margin-top:4px;font-variant-numeric:tabular-nums}
+.kpi.warn{border-color:#f1c4bf;background:#fff5f4}
+.kpi.warn .v{color:#b42318}
+.kpi.ok .v{color:#1b7a43}
+.steps td.dest{color:#4b5563}
+.steps td.how{color:#6b7785;font-size:13px}
+.steps tr.wait td{color:#9aa4b0}
+.steps tr.part td{background:#fff8eb}
+.steps tr.done td{background:#f1faf4}
+.steps tr.done td.amt{text-decoration:line-through;color:#1b7a43}
+.pill{display:inline-block;font-size:12px;font-weight:700;padding:2px 8px;border-radius:20px;white-space:nowrap}
+.pill.paid{background:#e6f4ea;color:#1b7a43}
+.pill.part{background:#fdecc8;color:#8a5300}
+.pill.wait{background:#eef1f5;color:#6b7785}
+.chk{width:22px;height:22px;accent-color:#1b7a43;cursor:pointer}
+.alert{border-radius:12px;padding:14px 16px;margin-bottom:16px}
+.alert.bad{background:#fff5f4;border:1px solid #f1c4bf}
+.alert.good{background:#f1faf4;border:1px solid #bfe3cb}
+.alert.info{background:#f4f6f9;border:1px solid #d5dbe3}
+.alert b{display:block;margin-bottom:4px}
+.copybox{background:#fff;border:1px dashed #d5dbe3;border-radius:8px;padding:10px;margin-top:8px;white-space:pre-wrap;font-size:14px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.wagesgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+.wagesgrid label{display:block;font-size:12px;font-weight:700;color:#6b7785;margin-bottom:4px}
+.wagesgrid input.m{width:100%}
+.today td{background:#fff8f2}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(80px);background:#1f2a37;color:#fff;padding:10px 16px;border-radius:10px;transition:transform .2s,opacity .2s;z-index:50;opacity:0;pointer-events:none}
+#toast.on{transform:translateX(-50%) translateY(0);opacity:1}
+.signin{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:#f8f3ee}
+.sbox{background:#fff;border-radius:20px;box-shadow:0 20px 50px rgba(0,0,0,.08);width:100%;max-width:400px;overflow:hidden}
+.sbox .hd{background:#b9531a;padding:26px;text-align:center}
+.sbox .hd img{height:52px}
+.sbox .hd div{color:#fff;font:600 12px Montserrat,sans-serif;letter-spacing:3px;margin-top:8px}
+.sbox form{padding:22px 24px 24px}
+.sbox h1{font:700 20px Montserrat,sans-serif;margin:0 0 4px}
+.sbox p{color:#6b7785;margin:0 0 16px;font-size:14px}
+.sbox label{display:block;font-size:12px;font-weight:700;color:#6b7785;margin:12px 0 4px}
+.sbox input{width:100%;font-size:16px;padding:11px 12px;border:1px solid #d5dbe3;border-radius:10px}
+.go{width:100%;margin-top:18px;background:#b9531a;color:#fff;border:0;border-radius:10px;padding:13px;font-weight:700;font-size:16px;cursor:pointer}
+.go[disabled]{opacity:.6}
+.msg{color:#b42318;font-size:14px;margin-top:10px;min-height:1em}
+.lnk{background:none;border:0;color:#b9531a;cursor:pointer;margin-top:8px;padding:0;font-weight:700}
+.scroll{overflow-x:auto}
+@media (max-width:640px){
+  .wrap{padding:10px}
+  .steps .how,.steps th.how{display:none}
+  th,td{padding:7px 6px}
+  input.m{width:90px}
+  .weeknav .range{min-width:0}
+}
+@media print{.top,.weeknav,.noprint{display:none!important}body{background:#fff}.card{break-inside:avoid}}
+</style>
+</head>
+<body>
+<div id="root"><div class="loading">Loading…</div></div>
+<div id="toast"></div>
+<script src="../manage/supabase.js?v=2.119.0"></script>
+<script>
+/* ===== CALC (pure; no DOM) ===== */
+var Calc = (function(){
+  function r2(n){ return Math.round((+n || 0) * 100) / 100; }
+  // steps: settings steps; takings: number; wages: {net, cost}
+  function run(steps, takings, wages){
+    takings = r2(takings);
+    var net = r2(wages && wages.net), cost = r2(wages && wages.cost);
+    var paye = r2(Math.max(0, cost - net));
+    var left = takings, out = [], shortAt = -1, shortTotal = 0;
+    steps.forEach(function(s, i){
+      var amt;
+      if (s.kind === 'pct') amt = r2(takings * (+s.value || 0) / 100);
+      else if (s.kind === 'wages') amt = net;
+      else if (s.kind === 'paye') amt = paye;
+      else amt = r2(s.value);
+      var paid, status;
+      if (shortAt > -1) { paid = 0; status = amt > 0 ? 'wait' : 'paid'; }
+      else if (left >= amt - 0.001) { paid = amt; status = 'paid'; }
+      else { paid = r2(Math.max(0, left)); status = 'part'; shortAt = i; }
+      left = r2(left - paid);
+      shortTotal = r2(shortTotal + (amt - paid));
+      out.push({ step: s, amount: amt, pay: paid, owed: r2(amt - paid), status: status, leftAfter: left });
+    });
+    return { takings: takings, rows: out, leftover: left, shortAt: shortAt, shortTotal: shortTotal,
+             wagesCost: cost, wagesPct: takings > 0 ? cost / takings * 100 : 0, paye: paye };
+  }
+  return { run: run, r2: r2 };
+})();
+if (typeof module !== 'undefined') module.exports = Calc;
+/* ===== END CALC ===== */
+</script>
+<script>
+(function(){
+if (!window.supabase) return;
+var SB_URL = 'https://vvhrtizoncwbuynbrczg.supabase.co';
+var SB_KEY = 'sb_publishable_xOqrqL8x9zRexvIXeUZORg_NVw4vOMM';
+// Same storage key as the manager app, so signing in there signs you in here too.
+var sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true, storageKey: 'roots-manager-auth' } });
+var root = document.getElementById('root');
+var DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+var DOWL = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+var MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+var settings = null, days = {}, weeks = {}, view = 'week', weekStart = null, histRange = 13, saving = 0, lastErr = '';
+var editSteps = null;
+
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function money(n){ return (n < 0 ? '−£' : '£') + Math.abs(n).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+function money0(n){ return '£' + Math.round(n).toLocaleString('en-GB'); }
+function parseD(s){ var p = s.split('-').map(Number); return new Date(p[0], p[1]-1, p[2], 12); }
+function fmtD(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+function addDays(s, n){ var d = parseD(s); d.setDate(d.getDate() + n); return fmtD(d); }
+function mondayOf(s){ var d = parseD(s); return addDays(s, -((d.getDay() + 6) % 7)); }
+function today(){ return fmtD(new Date()); }
+function nice(s, yr){ var d = parseD(s); return d.getDate() + ' ' + MON[d.getMonth()] + (yr ? ' ' + d.getFullYear() : ''); }
+function numIn(v){ v = String(v || '').replace(/[£,\s]/g, ''); if (v === '') return 0; var n = parseFloat(v); return isFinite(n) && n >= 0 ? Calc.r2(n) : null; }
+function toast(m){ var t = document.getElementById('toast'); t.textContent = m; t.className = 'on'; clearTimeout(toast._t); toast._t = setTimeout(function(){ t.className = ''; }, 2400); }
+function fmtIn(n){ return n ? (+n).toFixed(2) : ''; }
+
+function weekDays(ws){ var a = []; for (var i = 0; i < 7; i++) a.push(addDays(ws, i)); return a; }
+function weekTakings(ws){ return Calc.r2(weekDays(ws).reduce(function(t, d){ var x = days[d]; return t + (x ? (+x.card) + (+x.cash) : 0); }, 0)); }
+function weekData(ws){ return (weeks[ws] && weeks[ws].data) || {}; }
+function stepsFor(ws){ var w = weekData(ws); return w.steps || settings.steps; }
+function calcWeek(ws){ var w = weekData(ws); return Calc.run(stepsFor(ws), weekTakings(ws), { net: w.wagesNet, cost: w.wagesCost }); }
+
+/* ---------- saving ---------- */
+function setStatus(){
+  var el = document.getElementById('st'); if (!el) return;
+  if (lastErr) { el.className = 'status err'; el.textContent = 'Not saved: ' + lastErr; }
+  else { el.className = 'status'; el.textContent = saving ? 'Saving…' : 'All saved'; }
+}
+function track(p){
+  saving++; setStatus();
+  return p.then(function(res){
+    saving--;
+    if (res && res.error) { lastErr = res.error.message || 'error'; setStatus(); throw res.error; }
+    lastErr = ''; setStatus(); return res;
+  }, function(e){ saving--; lastErr = (e && e.message) || 'connection problem'; setStatus(); throw e; });
+}
+function saveDay(d){
+  var x = days[d];
+  if (!x || (!+x.card && !+x.cash && !x.note)) { delete days[d]; return track(sb.from('money_days').delete().eq('day', d)); }
+  return track(sb.from('money_days').upsert({ day: d, card: +x.card || 0, cash: +x.cash || 0, note: x.note || '', updated_at: new Date().toISOString() }));
+}
+function saveWeek(ws){
+  var w = weeks[ws] || (weeks[ws] = { week_start: ws, data: {} });
+  return track(sb.from('money_weeks').upsert({ week_start: ws, data: w.data, updated_at: new Date().toISOString() }));
+}
+function lockSteps(ws){ var w = weeks[ws] || (weeks[ws] = { week_start: ws, data: {} }); if (!w.data.steps) w.data.steps = JSON.parse(JSON.stringify(settings.steps)); }
+
+/* ---------- views ---------- */
+function shell(inner){
+  root.innerHTML =
+    '<div class="top"><div class="brand"><img src="../logo.png" alt="Roots"><div class="sub">Money</div></div>' +
+    '<div class="tabs">' + [['week','This week'],['history','History'],['settings','Settings']].map(function(t){
+      return '<button data-v="' + t[0] + '" class="' + (view === t[0] ? 'on' : '') + '">' + t[1] + '</button>'; }).join('') + '</div>' +
+    '<div class="spacer"></div><span id="st" class="status"></span>' +
+    '<a class="btn small" href="../manage/">Rota</a><button class="btn small" id="out">Sign out</button></div>' +
+    '<div class="wrap">' + inner + '</div>';
+  root.querySelectorAll('.tabs button').forEach(function(b){ b.onclick = function(){ view = b.dataset.v; editSteps = null; render(); }; });
+  document.getElementById('out').onclick = function(){ sb.auth.signOut().then(function(){ location.reload(); }); };
+  setStatus();
+}
+
+function render(){
+  if (view === 'history') return renderHistory();
+  if (view === 'settings') return renderSettings();
+  renderWeek();
+}
+
+function renderWeek(){
+  var ws = weekStart, dlist = weekDays(ws), w = weekData(ws), c = calcWeek(ws), t = today();
+  var transferDay = addDays(ws, 7);
+  var flag = +settings.wagesFlagPct || 35;
+  var doneMap = w.done || {};
+  var allDone = c.rows.length && c.rows.every(function(r){ return r.pay <= 0 || doneMap[r.step.id]; });
+  var locked = !!w.steps;
+
+  var h = '<div class="weeknav"><button id="prev" aria-label="Previous week">‹</button><div class="range">' +
+    nice(dlist[0]) + ' – ' + nice(dlist[6], true) + '<small>Transfers on Monday ' + nice(transferDay) + '</small></div>' +
+    '<button id="next" aria-label="Next week">›</button></div>';
+
+  // KPIs
+  h += '<div class="kpis">' +
+    '<div class="kpi"><div class="l">Takings</div><div class="v">' + money(c.takings) + '</div></div>' +
+    '<div class="kpi ' + (c.wagesCost ? (c.wagesPct > flag ? 'warn' : 'ok') : '') + '"><div class="l">Wages %</div><div class="v">' + (c.wagesCost && c.takings ? c.wagesPct.toFixed(1) + '%' : '—') + '</div></div>' +
+    (!c.takings ? '<div class="kpi"><div class="l">Left over</div><div class="v">—</div></div>' : c.shortAt > -1
+      ? '<div class="kpi warn"><div class="l">Short this week</div><div class="v">' + money(c.shortTotal) + '</div></div>'
+      : '<div class="kpi ok"><div class="l">Left over</div><div class="v">' + money(c.leftover) + '</div></div>') +
+    '</div>';
+
+  // Takings
+  h += '<div class="card"><h2>1. Till takings <span class="r">Enter each day\'s Z-read</span></h2><div class="scroll"><table><thead><tr><th>Day</th><th class="n">Card</th><th class="n">Cash</th><th class="n">Total</th></tr></thead><tbody>';
+  var tc = 0, tk = 0;
+  dlist.forEach(function(d){
+    var x = days[d] || {}, card = +x.card || 0, cash = +x.cash || 0; tc += card; tk += cash;
+    h += '<tr class="' + (d === t ? 'today' : '') + '"><td><b>' + DOWL[parseD(d).getDay()] + '</b> <span class="hint">' + nice(d) + '</span></td>' +
+      '<td class="n"><input class="m" inputmode="decimal" data-day="' + d + '" data-f="card" value="' + fmtIn(card) + '" placeholder="0.00" aria-label="Card ' + d + '"></td>' +
+      '<td class="n"><input class="m" inputmode="decimal" data-day="' + d + '" data-f="cash" value="' + fmtIn(cash) + '" placeholder="0.00" aria-label="Cash ' + d + '"></td>' +
+      '<td class="n" data-tot="' + d + '">' + money(card + cash) + '</td></tr>';
+  });
+  h += '<tr class="tot"><td>Week</td><td class="n">' + money(tc) + '</td><td class="n">' + money(tk) + '</td><td class="n">' + money(c.takings) + '</td></tr></tbody></table></div></div>';
+
+  // Wages
+  h += '<div class="card"><h2>2. Wages for the week <span class="r">From Sameerah\'s wages document</span></h2><div class="body"><div class="wagesgrid">' +
+    '<div><label for="wn">Take-home pay total</label><input class="m" id="wn" inputmode="decimal" value="' + fmtIn(w.wagesNet) + '" placeholder="0.00"></div>' +
+    '<div><label for="wc">Total cost to employer</label><input class="m" id="wc" inputmode="decimal" value="' + fmtIn(w.wagesCost) + '" placeholder="0.00"></div>' +
+    '<div><label>PAYE and pension (worked out)</label><div class="big" style="font-size:20px;padding-top:6px">' + money(c.paye) + '</div></div>' +
+    '</div>' +
+    (w.wagesCost && w.wagesNet > w.wagesCost ? '<p class="hint" style="color:#b42318">Take-home is more than cost to employer. Check the figures.</p>' : '') +
+    (c.wagesCost && c.takings && c.wagesPct > flag ? '<div class="alert bad" style="margin:12px 0 0"><b>Wages are ' + c.wagesPct.toFixed(1) + '% of takings</b>That\'s over your ' + flag + '% limit.</div>' : '') +
+    '</div></div>';
+
+  // Transfers
+  h += '<div class="card"><h2>3. Monday transfers <span class="r">' + (locked ? 'Amounts locked for this week · <button class="btn small noprint" id="relock">Use latest settings</button>' : 'Tick each one when it\'s sent') + '</span></h2>';
+  if (!c.takings) h += '<div class="body hint">Enter the till takings above and the transfers will appear here.</div>';
+  else {
+    h += '<div class="scroll"><table class="steps"><thead><tr><th>#</th><th>Transfer</th><th class="how">How</th><th class="n">Send</th><th>To</th><th></th><th class="noprint">Done</th></tr></thead><tbody>';
+    c.rows.forEach(function(r, i){
+      var s = r.step, how = s.kind === 'pct' ? s.value + '% of takings' : s.kind === 'wages' ? 'Take-home pay' : s.kind === 'paye' ? 'Cost to employer − take-home' : 'Fixed';
+      var done = !!doneMap[s.id];
+      var pill = r.status === 'paid' ? '' : r.status === 'part' ? '<span class="pill part">' + money(r.owed) + ' short</span>' : '<span class="pill wait">Waits</span>';
+      var needs = (s.kind === 'wages' || s.kind === 'paye') && !w.wagesCost ? ' <span class="pill wait">Enter wages</span>' : '';
+      h += '<tr class="' + (done ? 'done ' : '') + (r.status === 'part' ? 'part' : r.status === 'wait' ? 'wait' : '') + '"><td>' + (i + 1) + '</td><td><b>' + esc(s.name) + '</b>' + needs + '</td><td class="how">' + esc(how) + '</td>' +
+        '<td class="n amt"><b>' + money(r.pay) + '</b>' + (r.status !== 'paid' ? '<div class="hint">of ' + money(r.amount) + '</div>' : '') + '</td><td class="dest">' + esc(s.dest) + '</td><td>' + pill + '</td>' +
+        '<td class="noprint">' + (r.pay > 0 ? '<input type="checkbox" class="chk" data-done="' + esc(s.id) + '"' + (done ? ' checked' : '') + ' aria-label="Mark ' + esc(s.name) + ' as sent">' : '') + '</td></tr>';
+    });
+    h += '<tr class="tot"><td></td><td>Left over</td><td class="how"></td><td class="n">' + money(c.leftover) + '</td><td colspan="3" class="hint" style="font-weight:400">' + (c.leftover > 0 ? esc(settings.leftoverNote || '') : '') + '</td></tr>';
+    h += '</tbody></table></div>';
+  }
+  h += '</div>';
+
+  // Outcome
+  if (c.takings) {
+    if (c.shortAt > -1) {
+      var owed = c.rows.filter(function(r){ return r.owed > 0; }).map(function(r){ return r.step.name + ' ' + money(r.owed); }).join(', ');
+      var msg = 'Short this week. Takings ' + money(c.takings) + '. Paid up to step ' + (c.shortAt + 1) + ' (' + c.rows[c.shortAt].step.name + ', part paid). Still owed: ' + owed + ' (total ' + money(c.shortTotal) + ').';
+      h += '<div class="alert bad"><b>Not enough to cover everything this week</b>Send what the list shows, top to bottom. Everything from step ' + (c.shortAt + 1) + ' down waits. Never take money back out of VAT, PAYE, HMRC repayment or Profit to fill a gap.' +
+        '<div class="copybox" id="msg">' + esc(msg) + '</div><button class="btn small noprint" id="copy" style="margin-top:8px">Copy message</button></div>';
+    } else if (allDone) {
+      h += '<div class="alert good"><b>All transfers done</b>Revolut should be back to ' + money(c.leftover) + '.</div>';
+    }
+  }
+  h += '<div class="row noprint"><button class="btn" id="print">Print this week</button></div>';
+
+  shell(h);
+
+  document.getElementById('prev').onclick = function(){ weekStart = addDays(weekStart, -7); render(); };
+  document.getElementById('next').onclick = function(){ weekStart = addDays(weekStart, 7); render(); };
+  document.getElementById('print').onclick = function(){ window.print(); };
+  var cp = document.getElementById('copy');
+  if (cp) cp.onclick = function(){ var txt = document.getElementById('msg').textContent;
+    (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(function(){ toast('Copied'); }, function(){ toast('Select the text and copy it'); }); };
+  var rl = document.getElementById('relock');
+  if (rl) rl.onclick = function(){
+    if (!confirm('Replace this week\'s percentages and amounts with the ones in Settings now?')) return;
+    weeks[ws].data.steps = JSON.parse(JSON.stringify(settings.steps)); saveWeek(ws).catch(function(){}); render(); };
+
+  root.querySelectorAll('input[data-day]').forEach(function(inp){
+    inp.onchange = function(){
+      var v = numIn(inp.value);
+      if (v === null) { toast('Enter an amount like 1234.50'); inp.value = fmtIn((days[inp.dataset.day] || {})[inp.dataset.f]); return; }
+      var d = inp.dataset.day, x = days[d] || (days[d] = { day: d, card: 0, cash: 0, note: '' });
+      x[inp.dataset.f] = v;
+      saveDay(d).catch(function(){});
+      rerender();
+    };
+  });
+  ['wn','wc'].forEach(function(id){
+    var inp = document.getElementById(id);
+    inp.onchange = function(){
+      var v = numIn(inp.value);
+      if (v === null) { toast('Enter an amount like 1234.50'); return render(); }
+      var wk = weeks[ws] || (weeks[ws] = { week_start: ws, data: {} });
+      wk.data[id === 'wn' ? 'wagesNet' : 'wagesCost'] = v;
+      saveWeek(ws).catch(function(){}); rerender();
+    };
+  });
+  root.querySelectorAll('input[data-done]').forEach(function(cb){
+    cb.onchange = function(){
+      lockSteps(ws);
+      var wk = weeks[ws]; wk.data.done = wk.data.done || {};
+      if (cb.checked) {
+        var r = calcWeek(ws).rows.filter(function(x){ return x.step.id === cb.dataset.done; })[0];
+        wk.data.done[cb.dataset.done] = { amount: r ? r.pay : 0, at: new Date().toISOString() };
+      } else delete wk.data.done[cb.dataset.done];
+      saveWeek(ws).catch(function(){}); render();
+    };
+  });
+}
+// Re-draw after focus has moved (e.g. Tab to the next box), then put focus back on that box.
+function rerender(){
+  setTimeout(function(){
+    var a = document.activeElement, key = null;
+    if (a && a.id) key = '#' + a.id;
+    else if (a && a.dataset && a.dataset.day) key = 'input[data-day="' + a.dataset.day + '"][data-f="' + a.dataset.f + '"]';
+    render();
+    if (key) { var el = root.querySelector(key); if (el) { el.focus(); try { el.select(); } catch (_) {} } }
+  }, 0);
+}
+
+function renderHistory(){
+  var t = today(), cur = mondayOf(t);
+  var all = {};
+  Object.keys(days).forEach(function(d){ all[mondayOf(d)] = 1; });
+  Object.keys(weeks).forEach(function(ws){ all[ws] = 1; });
+  var list = Object.keys(all).sort().reverse();
+  if (histRange) { var from = addDays(cur, -7 * (histRange - 1)); list = list.filter(function(ws){ return ws >= from; }); }
+  var tot = { takings: 0, vat: 0, profit: 0, cogs: 0, wages: 0, short: 0 };
+  var rows = list.map(function(ws){
+    var c = calcWeek(ws), get = function(id){ var r = c.rows.filter(function(x){ return x.step.id === id; })[0]; return r ? r.pay : 0; };
+    var o = { ws: ws, takings: c.takings, vat: get('vat'), profit: get('profit'), cogs: get('cogs'), wagesCost: c.wagesCost, wagesPct: c.wagesPct, short: c.shortTotal };
+    tot.takings += o.takings; tot.vat += o.vat; tot.profit += o.profit; tot.cogs += o.cogs; tot.wages += o.wagesCost; tot.short += o.short;
+    return o;
+  });
+  var flag = +settings.wagesFlagPct || 35;
+  var h = '<div class="row" style="margin-bottom:14px"><b>Show</b><select id="rng">' +
+    [[4,'Last 4 weeks'],[13,'Last 13 weeks (a quarter)'],[52,'Last 52 weeks'],[0,'Everything']].map(function(o){ return '<option value="' + o[0] + '"' + (histRange === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></div>';
+  h += '<div class="kpis">' +
+    '<div class="kpi"><div class="l">Takings</div><div class="v">' + money0(tot.takings) + '</div></div>' +
+    '<div class="kpi"><div class="l">Into VAT</div><div class="v">' + money0(tot.vat) + '</div></div>' +
+    '<div class="kpi"><div class="l">Into Profit</div><div class="v">' + money0(tot.profit) + '</div></div>' +
+    '<div class="kpi ' + (tot.takings && tot.wages / tot.takings * 100 > flag ? 'warn' : '') + '"><div class="l">Wages %</div><div class="v">' + (tot.takings && tot.wages ? (tot.wages / tot.takings * 100).toFixed(1) + '%' : '—') + '</div></div>' +
+    '<div class="kpi ' + (tot.short > 0 ? 'warn' : 'ok') + '"><div class="l">Total short</div><div class="v">' + money0(tot.short) + '</div></div></div>';
+  h += '<div class="card"><h2>Week by week <span class="r">Tap a week to open it</span></h2><div class="scroll"><table><thead><tr><th>Week</th><th class="n">Takings</th><th class="n">VAT</th><th class="n">Profit</th><th class="n">Food &amp; drink</th><th class="n">Wages %</th><th class="n">Short</th></tr></thead><tbody>';
+  if (!rows.length) h += '<tr><td colspan="7" class="hint">No weeks entered yet.</td></tr>';
+  rows.forEach(function(o){
+    h += '<tr style="cursor:pointer" data-ws="' + o.ws + '"><td><b>' + nice(o.ws) + ' – ' + nice(addDays(o.ws, 6), true) + '</b></td><td class="n">' + money(o.takings) + '</td><td class="n">' + money(o.vat) + '</td><td class="n">' + money(o.profit) + '</td><td class="n">' + money(o.cogs) + '</td>' +
+      '<td class="n" style="' + (o.wagesCost && o.wagesPct > flag ? 'color:#b42318;font-weight:700' : '') + '">' + (o.wagesCost && o.takings ? o.wagesPct.toFixed(1) + '%' : '—') + '</td><td class="n" style="' + (o.short > 0 ? 'color:#b42318;font-weight:700' : '') + '">' + (o.short > 0 ? money(o.short) : '—') + '</td></tr>';
+  });
+  if (rows.length > 1) h += '<tr class="tot"><td>Total</td><td class="n">' + money(tot.takings) + '</td><td class="n">' + money(tot.vat) + '</td><td class="n">' + money(tot.profit) + '</td><td class="n">' + money(tot.cogs) + '</td><td class="n"></td><td class="n">' + (tot.short > 0 ? money(tot.short) : '—') + '</td></tr>';
+  h += '</tbody></table></div></div><p class="hint">VAT and Profit show what the page told you to send. They don\'t include money taken out of those pots.</p>';
+  shell(h);
+  document.getElementById('rng').onchange = function(e){ histRange = +e.target.value; render(); };
+  root.querySelectorAll('tr[data-ws]').forEach(function(tr){ tr.onclick = function(){ weekStart = tr.dataset.ws; view = 'week'; render(); }; });
+}
+
+function renderSettings(){
+  if (!editSteps) editSteps = JSON.parse(JSON.stringify(settings.steps));
+  var h = '<div class="alert info"><b>How the list works</b>Each Monday the page works down this list from the top, using last week\'s till takings. If the money runs out, it stops there and everything below waits. Weeks you\'ve already ticked keep their old amounts.</div>';
+  h += '<div class="card"><h2>Monday order</h2><div class="scroll"><table><thead><tr><th></th><th>Transfer</th><th>Type</th><th class="n">Amount</th><th>Sent to</th><th></th></tr></thead><tbody>';
+  editSteps.forEach(function(s, i){
+    var fixedKind = s.kind === 'wages' || s.kind === 'paye';
+    h += '<tr><td style="white-space:nowrap"><button class="btn small" data-up="' + i + '"' + (i ? '' : ' disabled') + ' aria-label="Move up">↑</button> <button class="btn small" data-dn="' + i + '"' + (i < editSteps.length - 1 ? '' : ' disabled') + ' aria-label="Move down">↓</button></td>' +
+      '<td><input class="t" data-i="' + i + '" data-k="name" value="' + esc(s.name) + '"></td>' +
+      '<td>' + (fixedKind ? '<span class="hint">' + (s.kind === 'wages' ? 'From wages doc' : 'Worked out') + '</span>' :
+        '<select data-i="' + i + '" data-k="kind"><option value="pct"' + (s.kind === 'pct' ? ' selected' : '') + '>% of takings</option><option value="fixed"' + (s.kind === 'fixed' ? ' selected' : '') + '>Fixed £</option></select>') + '</td>' +
+      '<td class="n">' + (fixedKind ? '' : '<input class="m" inputmode="decimal" data-i="' + i + '" data-k="value" value="' + esc(s.value) + '">' + (s.kind === 'pct' ? ' %' : '')) + '</td>' +
+      '<td><input class="t" data-i="' + i + '" data-k="dest" value="' + esc(s.dest) + '"></td>' +
+      '<td>' + (fixedKind ? '' : '<button class="btn small danger" data-rm="' + i + '" aria-label="Remove">✕</button>') + '</td></tr>';
+  });
+  h += '</tbody></table></div><div class="body row"><button class="btn" id="add">+ Add a transfer</button></div></div>';
+  h += '<div class="card"><h2>Other settings</h2><div class="body wagesgrid">' +
+    '<div><label for="flag" style="font-size:12px;font-weight:700;color:#6b7785">Flag wages over (% of takings)</label><input class="m" id="flag" inputmode="decimal" value="' + esc(settings.wagesFlagPct) + '"></div>' +
+    '<div style="grid-column:span 2"><label for="lo" style="font-size:12px;font-weight:700;color:#6b7785">What to do with anything left over</label><input class="t" id="lo" value="' + esc(settings.leftoverNote || '') + '"></div></div></div>';
+  h += '<div class="row"><button class="btn primary" id="save">Save settings</button><button class="btn" id="undo">Cancel changes</button></div>';
+  shell(h);
+
+  root.querySelectorAll('[data-k]').forEach(function(el){
+    el.onchange = function(){ var s = editSteps[+el.dataset.i], k = el.dataset.k;
+      if (k === 'value') { var v = numIn(el.value); if (v === null) { toast('Enter a number'); el.value = s.value; return; } s.value = v; }
+      else s[k] = el.value; if (k === 'kind') render(); };
+  });
+  root.querySelectorAll('[data-up]').forEach(function(b){ b.onclick = function(){ var i = +b.dataset.up; var x = editSteps.splice(i, 1)[0]; editSteps.splice(i - 1, 0, x); render(); }; });
+  root.querySelectorAll('[data-dn]').forEach(function(b){ b.onclick = function(){ var i = +b.dataset.dn; var x = editSteps.splice(i, 1)[0]; editSteps.splice(i + 1, 0, x); render(); }; });
+  root.querySelectorAll('[data-rm]').forEach(function(b){ b.onclick = function(){ var s = editSteps[+b.dataset.rm]; if (confirm('Remove "' + s.name + '" from the list?')) { editSteps.splice(+b.dataset.rm, 1); render(); } }; });
+  document.getElementById('add').onclick = function(){ editSteps.push({ id: 's' + Math.random().toString(36).slice(2, 8), name: 'New transfer', kind: 'fixed', value: 0, dest: '' }); render(); };
+  document.getElementById('undo').onclick = function(){ editSteps = null; render(); };
+  document.getElementById('save').onclick = function(){
+    var f = numIn(document.getElementById('flag').value);
+    var pct = editSteps.filter(function(s){ return s.kind === 'pct'; }).reduce(function(t, s){ return t + (+s.value || 0); }, 0);
+    if (pct > 100) { toast('The percentages add up to more than 100%'); return; }
+    var next = { steps: editSteps, wagesFlagPct: f === null ? 35 : f, leftoverNote: document.getElementById('lo').value };
+    track(sb.from('money_settings').update({ data: next, updated_at: new Date().toISOString() }).eq('id', 1)).then(function(){
+      settings = next; editSteps = null; toast('Settings saved'); render(); }, function(){ toast('Couldn\'t save. Try again.'); });
+  };
+}
+
+/* ---------- sign in / load ---------- */
+function signInForm(msg, ok, mode){
+  var reset = mode === 'reset', newpw = mode === 'newpw';
+  root.innerHTML = '<div class="signin"><div class="sbox"><div class="hd"><img src="../logo.png" alt="Roots"><div>MONEY</div></div><form id="f">' +
+    (newpw ? '<h1>Set a new password</h1><p>At least 8 characters.</p><label for="pw">New password</label><input id="pw" type="password" autocomplete="new-password" minlength="8" required>'
+      : '<h1>' + (reset ? 'Reset your password' : 'Sign in') + '</h1><p>' + (reset ? 'We\'ll email you a link.' : 'Use your Roots manager login.') + '</p>' +
+        '<label for="em">Email</label><input id="em" type="email" autocomplete="username" required>' +
+        (reset ? '' : '<label for="pw">Password</label><input id="pw" type="password" autocomplete="current-password" required>')) +
+    '<button class="go" type="submit">' + (newpw ? 'Save password' : reset ? 'Send reset link' : 'Sign in') + '</button>' +
+    '<div class="msg" style="' + (ok ? 'color:#1b7a43' : '') + '">' + esc(msg || '') + '</div>' +
+    (newpw ? '' : '<button type="button" class="lnk" id="sw">' + (reset ? '← Back to sign in' : 'Forgot password?') + '</button>') + '</form></div></div>';
+  var f = document.getElementById('f'), sw = document.getElementById('sw');
+  if (sw) sw.onclick = function(){ signInForm('', false, reset ? '' : 'reset'); };
+  f.onsubmit = function(e){
+    e.preventDefault();
+    var btn = f.querySelector('.go'), m = f.querySelector('.msg'); btn.disabled = true; m.textContent = '';
+    var p;
+    if (newpw) p = sb.auth.updateUser({ password: f.querySelector('#pw').value }).then(function(r){ if (r.error) throw r.error; history.replaceState(null, '', location.pathname); return boot(); });
+    else if (reset) p = sb.auth.resetPasswordForEmail(f.querySelector('#em').value.trim(), { redirectTo: location.origin + location.pathname }).then(function(r){ if (r.error) throw r.error; signInForm('If that email has a login, a reset link is on its way.', true, 'reset'); });
+    else p = sb.auth.signInWithPassword({ email: f.querySelector('#em').value.trim(), password: f.querySelector('#pw').value }).then(function(r){ if (r.error) throw r.error; return boot(); });
+    p.catch(function(err){ btn.disabled = false; m.textContent = /invalid login/i.test(err.message || '') ? 'Email or password is wrong.' : (err.message || 'Something went wrong.'); });
+  };
+  var first = f.querySelector('input'); if (first) first.focus();
+}
+
+function boot(){
+  return sb.auth.getSession().then(function(r){
+    var session = r.data && r.data.session;
+    if (!session) return signInForm();
+    root.innerHTML = '<div class="loading">Loading…</div>';
+    return sb.rpc('money_allowed').then(function(a){
+      if (a.error) throw a.error;
+      if (!a.data) {
+        root.innerHTML = '<div class="signin"><div class="sbox"><div class="hd"><img src="../logo.png" alt="Roots"><div>MONEY</div></div><form><h1>No access</h1><p>This page is only for the owner\'s login.</p><button type="button" class="go" id="so">Sign out</button></form></div></div>';
+        document.getElementById('so').onclick = function(){ sb.auth.signOut().then(function(){ location.reload(); }); };
+        return;
+      }
+      return Promise.all([
+        sb.from('money_settings').select('data').eq('id', 1).single(),
+        sb.from('money_days').select('day,card,cash,note'),
+        sb.from('money_weeks').select('week_start,data')
+      ]).then(function(res){
+        res.forEach(function(x){ if (x.error) throw x.error; });
+        settings = res[0].data.data;
+        days = {}; res[1].data.forEach(function(d){ days[d.day] = d; });
+        weeks = {}; res[2].data.forEach(function(w){ weeks[w.week_start] = w; });
+        var t = today(), dow = parseD(t).getDay();
+        // On Monday and Tuesday open last week (the one being transferred); otherwise this week.
+        weekStart = mondayOf(t); if (dow === 1 || dow === 2) weekStart = addDays(weekStart, -7);
+        render();
+      });
+    });
+  }).catch(function(err){
+    root.innerHTML = '<div class="loading">Couldn\'t load: ' + esc(err.message || err) + '<br><br><button class="btn" onclick="location.reload()">Try again</button></div>';
+  });
+}
+
+window.addEventListener('beforeunload', function(e){ if (saving) { e.preventDefault(); e.returnValue = ''; } });
+if (/type=recovery/.test(location.hash)) {
+  sb.auth.onAuthStateChange(function(ev){ if (ev === 'PASSWORD_RECOVERY') signInForm('', false, 'newpw'); });
+} else boot();
+})();
+</script>
+</body>
+</html>

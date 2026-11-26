@@ -292,7 +292,7 @@ function renderWeek(){
     if (c.shortAt > -1) {
       var owed = c.rows.filter(function(r){ return r.owed > 0; }).map(function(r){ return r.step.name + ' ' + money(r.owed); }).join(', ');
       var msg = 'Short this week. Takings ' + money(c.takings) + '. Paid up to step ' + (c.shortAt + 1) + ' (' + c.rows[c.shortAt].step.name + ', part paid). Still owed: ' + owed + ' (total ' + money(c.shortTotal) + ').';
-      h += '<div class="alert bad"><b>Not enough to cover everything this week</b>Send what the list shows, top to bottom. Everything from step ' + (c.shortAt + 1) + ' down waits. Never take money back out of VAT, PAYE, HMRC repayment or Profit to fill a gap.' +
+      h += '<div class="alert bad"><b>Not enough to cover everything this week</b>Send what the list shows, top to bottom. Everything from step ' + (c.shortAt + 1) + ' down waits. Never take money back out of VAT, PAYE or Profit to fill a gap.' +
         '<div class="copybox" id="msg">' + esc(msg) + '</div><button class="btn small noprint" id="copy" style="margin-top:8px">Copy message</button></div>';
     } else if (allDone) {
       h += '<div class="alert good"><b>All transfers done</b>Revolut should be back to ' + money(c.leftover) + '.</div>';

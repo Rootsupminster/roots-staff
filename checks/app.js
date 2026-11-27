@@ -78,10 +78,10 @@ async function route() {
     if (a === 'list') return viewList(b);
     if (a === 'log') return viewLog(b);
     if (a === 'today-log') return viewTodayLog();
+    if (a === 'docs') return b ? viewFolder(decodeURIComponent(b)) : viewDocs();
     if (S.mode === 'manager') {
       if (a === 'dash') return viewDash();
       if (a === 'records') return viewRecords(b);
-      if (a === 'docs') return b ? viewFolder(decodeURIComponent(b)) : viewDocs();
       if (a === 'setup') return viewSetup(b);
     }
     return viewHome();
@@ -92,7 +92,7 @@ function shell(title, body, tab, opts = {}) {
   const me = S.boot && S.boot.me;
   const nav = S.mode === 'manager'
     ? [['home', '✓', 'Checks', '#/'], ['dash', '▤', 'Overview', '#/dash'], ['records', '☰', 'Records', '#/records'], ['docs', '▣', 'Documents', '#/docs'], ['setup', '⚙︎', 'Setup', '#/setup']]
-    : [['home', '✓', 'Checks', '#/'], ['today-log', '☰', 'Today', '#/today-log'], ['me', '◯', 'Sign out', 'signout']];
+    : [['home', '✓', 'Checks', '#/'], ['today-log', '☰', 'Today', '#/today-log'], ['docs', '▣', 'Documents', '#/docs'], ['me', '◯', 'Sign out', 'signout']];
   return '<header class="top">' + (opts.back ? '<button class="back" data-back="' + esc(opts.back) + '" aria-label="Back">‹</button><h1>' + esc(title) + '</h1>'
     : '<img class="logo" src="logo-white.png" alt="Roots">') +
     (opts.back ? '' : '<div class="who">' + (me ? (S.mode === 'manager' ? 'Manager' : 'Signed in') + '<b>' + esc(me.name) + '</b>' : '') + '</div>') + '</header>' +
@@ -541,7 +541,7 @@ function recCard(r) {
 
 // ---------- manager: documents ----------
 function docStatus(d) {
-  if (!d.expires_on) return '';
+  if (!d.expires_on || !S.boot) return '';
   const today = S.boot.today;
   if (d.expires_on < today) return '<span class="pill warn">Expired</span>';
   if (d.expires_on <= addDays(today, 30)) return '<span class="pill part">Due ' + esc(fmtDate(d.expires_on, { weekday: undefined })) + '</span>';
@@ -550,34 +550,51 @@ function docStatus(d) {
 function docRow(d) {
   return '<div class="doc"><div class="t"><b>' + esc(d.title) + '</b><span>' + esc(d.folder) + (d.done_on ? ' · done ' + esc(fmtDate(d.done_on, { weekday: undefined, year: 'numeric' })) : '') + (d.expires_on ? ' · renew by ' + esc(fmtDate(d.expires_on, { weekday: undefined, year: 'numeric' })) : '') + '</span></div>' + docStatus(d) + '</div>';
 }
+async function loadDocs(folder) {
+  if (S.mode !== 'manager') {
+    const r = await rpc('chk_docs_list', { p_token: S.token });
+    return (r.docs || []).filter(d => !folder || d.folder === folder);
+  }
+  let q = sb.from('chk_docs').select('*').eq('deleted', false);
+  if (folder) q = q.eq('folder', folder);
+  const { data, error } = await q.order('done_on', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false });
+  if (error) throw error; return data;
+}
+async function openDoc(d) {
+  const w = window.open('', '_blank');
+  let url = null, err = null;
+  if (S.mode === 'manager') {
+    const { data: s, error: e } = await sb.storage.from(BUCKET).createSignedUrl(d.file_path, 300); url = s && s.signedUrl; err = e;
+  } else {
+    const { data: s, error: e } = await sb.functions.invoke('chk-doc-url', { body: { token: S.token, id: d.id } });
+    url = s && s.ok && s.url; err = e || (!url && new Error(s && s.error === 'session' ? 'Please sign in again.' : 'Couldn’t open that file.'));
+  }
+  if (!url) { if (w) w.close(); return toast(errMsg(err)); }
+  if (w) w.location = url; else location.href = url;
+}
 async function viewDocs() {
-  app.innerHTML = shell('Documents', '<div class="mut">Loading…</div>', 'docs', { wide: true });
-  const { data, error } = await sb.from('chk_docs').select('id,folder,expires_on').eq('deleted', false); if (error) throw error;
+  const mgr = S.mode === 'manager';
+  app.innerHTML = shell('Documents', '<div class="mut">Loading…</div>', 'docs', { wide: mgr });
+  const data = await loadDocs();
   const today = S.boot.today, soon = addDays(today, 30);
-  const body = '<div class="hello">Documents</div><p class="mut">Pest control reports, safety certificates and tests. Add a renewal date and the overview will warn you before it runs out.</p><div class="grid" style="margin-top:12px">' +
+  const body = '<div class="hello">Documents</div><p class="mut">' + (mgr ? 'Pest control reports, safety certificates and tests. Add a renewal date and the overview will warn you before it runs out.' : 'Pest control reports, safety certificates, tests and past records. Tap a folder to open a file.') + '</p><div class="grid" style="margin-top:12px">' +
     FOLDERS.map(f => { const ds = data.filter(d => d.folder === f); const ex = ds.filter(d => d.expires_on && d.expires_on < today).length, due = ds.filter(d => d.expires_on && d.expires_on >= today && d.expires_on <= soon).length;
       return '<button class="card" data-go="#/docs/' + encodeURIComponent(f) + '"><span class="ic">▣</span><div class="t"><b>' + esc(f) + '</b><span>' + ds.length + ' file' + (ds.length === 1 ? '' : 's') + '</span></div>' + (ex ? '<span class="pill warn">' + ex + ' expired</span>' : due ? '<span class="pill part">' + due + ' due</span>' : '') + '</button>'; }).join('') + '</div>';
-  app.innerHTML = shell('Documents', body, 'docs', { wide: true });
+  app.innerHTML = shell('Documents', body, 'docs', { wide: mgr });
 }
 async function viewFolder(folder) {
   if (!FOLDERS.includes(folder)) return go('#/docs');
-  app.innerHTML = shell(folder, '<div class="mut">Loading…</div>', 'docs', { back: '#/docs', wide: true });
-  const { data, error } = await sb.from('chk_docs').select('*').eq('folder', folder).eq('deleted', false).order('done_on', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false });
-  if (error) throw error;
-  const body = '<div class="row" style="align-items:center"><h3 style="flex:1">' + esc(folder) + '</h3><button class="btn sm" id="add" style="flex:0 0 auto">+ Add</button></div>' +
-    (folder === 'Previous records (Leafe)' ? '<p class="mut">Upload the monthly “AllRecords” PDFs from your Downloads folder here. You can select them all at once.</p>' : '') +
+  const mgr = S.mode === 'manager';
+  app.innerHTML = shell(folder, '<div class="mut">Loading…</div>', 'docs', { back: '#/docs', wide: mgr });
+  const data = await loadDocs(folder);
+  const body = '<div class="row" style="align-items:center"><h3 style="flex:1">' + esc(folder) + '</h3>' + (mgr ? '<button class="btn sm" id="add" style="flex:0 0 auto">+ Add</button>' : '') + '</div>' +
+    (folder === 'Previous records (Leafe)' && mgr ? '<p class="mut">Upload the monthly “AllRecords” PDFs from your Downloads folder here. You can select them all at once.</p>' : '') +
     '<div style="margin-top:12px">' + (data.length ? data.map(d => '<div class="doc"><div class="t"><b>' + esc(d.title) + '</b><span>' + (d.done_on ? 'Done ' + esc(fmtDate(d.done_on, { weekday: undefined, year: 'numeric' })) : 'Added ' + esc(fmtDate(d.created_at.slice(0, 10), { weekday: undefined, year: 'numeric' }))) +
       (d.expires_on ? ' · renew by ' + esc(fmtDate(d.expires_on, { weekday: undefined, year: 'numeric' })) : '') + (d.by_name ? ' · ' + esc(d.by_name) : '') + '</span>' + (d.notes ? '<span>' + esc(d.notes) + '</span>' : '') + '</div>' + docStatus(d) +
-      (d.file_path ? '<button class="btn ghost sm" data-open="' + d.id + '">Open</button>' : '') + '<button class="btn ghost sm" data-del="' + d.id + '" aria-label="Delete">✕</button></div>').join('') : '<div class="empty">No files yet</div>') + '</div>';
-  app.innerHTML = shell(folder, body, 'docs', { back: '#/docs', wide: true });
-  $('#add').onclick = () => addDoc(folder);
-  $$('[data-open]').forEach(b => b.onclick = async () => {
-    const d = data.find(x => x.id === b.dataset.open);
-    const w = window.open('', '_blank');
-    const { data: s, error: e } = await sb.storage.from(BUCKET).createSignedUrl(d.file_path, 300);
-    if (e) { if (w) w.close(); return toast(errMsg(e)); }
-    if (w) w.location = s.signedUrl; else location.href = s.signedUrl;
-  });
+      ((d.file_path || d.has_file) ? '<button class="btn ghost sm" data-open="' + d.id + '">Open</button>' : '') + (mgr ? '<button class="btn ghost sm" data-del="' + d.id + '" aria-label="Delete">✕</button>' : '') + '</div>').join('') : '<div class="empty">No files yet</div>') + '</div>';
+  app.innerHTML = shell(folder, body, 'docs', { back: '#/docs', wide: mgr });
+  if (mgr) $('#add').onclick = () => addDoc(folder);
+  $$('[data-open]').forEach(b => b.onclick = () => openDoc(data.find(x => x.id === b.dataset.open)));
   $$('[data-del]').forEach(b => b.onclick = async () => {
     const d = data.find(x => x.id === b.dataset.del);
     if (!await confirmSheet('Delete “' + d.title + '”?', 'The file will be removed permanently and can’t be recovered.', 'Delete')) return;

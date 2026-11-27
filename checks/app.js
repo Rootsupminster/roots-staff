@@ -95,7 +95,7 @@ async function route() {
 function shell(title, body, tab, opts = {}) {
   const me = S.boot && S.boot.me;
   const nav = S.mode === 'manager'
-    ? [['home', '✓', 'Checks', '#/'], ['dash', '▤', 'Overview', '#/dash'], ['records', '☰', 'Records', '#/records'], ['docs', '▣', 'Documents', '#/docs'], ['setup', '⚙︎', 'Setup', '#/setup']]
+    ? [['home', '✓', 'Checks', '#/'], ['dash', '▤', 'Overview', '#/dash'], ['records', '☰', 'Records', '#/records'], ['docs', '▣', 'Documents', '#/docs'], ['setup', '⚙︎', 'Setup', '#/setup'], ['rota', '▦', 'Rota', 'rota']]
     : [['home', '✓', 'Checks', '#/'], ['today-log', '☰', 'Today', '#/today-log'], ['docs', '▣', 'Documents', '#/docs'], ['rota', '▦', 'Rota', 'rota'], ['me', '◯', 'Sign out', 'signout']];
   return '<header class="top">' + (opts.back ? '<button class="back" data-back="' + esc(opts.back) + '" aria-label="Back">‹</button><h1>' + esc(title) + '</h1>'
     : '<img class="logo" src="logo-white.png" alt="Roots">') +
@@ -105,7 +105,7 @@ function shell(title, body, tab, opts = {}) {
 }
 document.addEventListener('click', e => {
   const n = e.target.closest('[data-nav]');
-  if (n) { const v = n.dataset.nav; if (v === 'signout') return askSignOut(); if (v === 'rota') { location.href = '../'; return; } go(v); return; }
+  if (n) { const v = n.dataset.nav; if (v === 'signout') return askSignOut(); if (v === 'rota') { location.href = S.mode === 'manager' ? '../manage/' : '../'; return; } go(v); return; }
   const b = e.target.closest('[data-back]'); if (b) { go(b.dataset.back); return; }
   const g = e.target.closest('[data-go]'); if (g) go(g.dataset.go);
 });

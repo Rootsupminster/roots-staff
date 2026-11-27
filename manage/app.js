@@ -160,7 +160,7 @@ function makeDb(sb){
 /* ---------- shared header ---------- */
 function headerHtml(){
   return '<header class="top"><div class="brand"><img src="'+LOGO+'" alt="'+esc(state.settings.venue||"Roots")+'"><span class="sub">Rota &amp; Labour</span></div>'+
-    '<nav class="tabs"><button data-act="view-rota" class="'+(view==='rota'?'on':'')+'">Rota</button><button data-act="view-times" class="'+(view==='times'?'on':'')+'">Timesheets</button><button data-act="view-staff" class="'+(view==='staff'?'on':'')+'">Staff</button><button data-act="view-clock">Clock-in screen ↗</button></nav>'+
+    '<nav class="tabs"><button data-act="view-rota" class="'+(view==='rota'?'on':'')+'">Rota</button><button data-act="view-times" class="'+(view==='times'?'on':'')+'">Timesheets</button><button data-act="view-staff" class="'+(view==='staff'?'on':'')+'">Staff</button><button data-act="view-clock">Clock-in screen ↗</button><button data-act="view-checks">Checks ↗</button></nav>'+
     '<div class="spacer"></div><span id="status" class="status"></span>'+
     (canMoney?'<a class="btn" href="../money/" style="text-decoration:none;color:#1f2a37">Money</a>':'')+
     '<button id="savebtn" class="btn primary" data-act="save">Save changes</button>'+
@@ -790,6 +790,7 @@ document.addEventListener('click',function(e){
     case 'view-staff':view='staff';nav();break;
     case 'signout':if(dirty&&!confirm0())break;sb.auth.signOut().then(function(){try{localStorage.removeItem(KIOSK_KEY);}catch(_){}location.replace(location.pathname);});break;
     case 'view-clock':if(dirty){toast('Save your changes first');break;}enterKiosk();break;
+    case 'view-checks':if(dirty){toast('Save your changes first');break;}location.href='../checks/#/dash';break;
     case 'tadd':if(readOnly)break;entryModal(null,{date:t.dataset.date,staffId:t.dataset.staff,shiftId:t.dataset.shift});break;
     case 'tedit':e.stopPropagation();var en=findEntry(t.dataset.id,t.dataset.date);if(en&&!readOnly)entryModal(en);break;
     case 'approveweek':if(!readOnly)approveWeek();break;

@@ -5,6 +5,7 @@
 const SB_URL = 'https://vvhrtizoncwbuynbrczg.supabase.co';
 const SB_KEY = 'sb_publishable_xOqrqL8x9zRexvIXeUZORg_NVw4vOMM';
 const TOKEN_KEY = 'roots-checks-token';
+const MODE_KEY = 'roots-checks-mode';
 // The rota app on this same site keeps its sign-in under 'token' and 'me' (JSON). Share it both ways.
 const rotaGet = k => { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } };
 const rotaSet = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, JSON.stringify(v)); } catch (e) { } };
@@ -113,7 +114,8 @@ document.addEventListener('click', e => {
 async function start() {
   S.token = localStorage.getItem(TOKEN_KEY) || rotaGet('token');
   const { data } = await sb.auth.getSession();
-  const wantStaff = !!S.token;
+  // A manager login on this device wins, unless someone chose to sign in here with a staff PIN.
+  const wantStaff = !!S.token && (localStorage.getItem(MODE_KEY) === 'staff' || !data.session);
   if (!wantStaff && data.session) {
     try { await loadBoot('manager'); return route(); } catch (e) { /* not a manager */ }
   }
@@ -168,7 +170,7 @@ function showPin(p) {
           err.textContent = r.error === 'locked' ? 'Too many tries. Wait ' + r.wait + ' minutes or ask a manager.' : r.error === 'pin' ? 'Wrong PIN. ' + r.left + ' tries left.' : 'Can’t sign in. Ask a manager.';
           pin = ''; paint(); dots.classList.add('shake'); setTimeout(() => dots.classList.remove('shake'), 400); return;
         }
-        S.token = r.token; localStorage.setItem(TOKEN_KEY, r.token); rotaSet('token', r.token); rotaSet('me', { id: r.id, name: r.name });
+        S.token = r.token; localStorage.setItem(TOKEN_KEY, r.token); localStorage.setItem(MODE_KEY, 'staff'); rotaSet('token', r.token); rotaSet('me', { id: r.id, name: r.name });
         await loadBoot('staff'); location.hash = '#/'; route();
       } catch (e) { err.textContent = errMsg(e); pin = ''; paint(); }
     }
@@ -186,7 +188,7 @@ function showManagerLogin() {
     e.preventDefault(); const err = $('#err'); err.textContent = 'Signing in…';
     const { error } = await sb.auth.signInWithPassword({ email: $('#em').value.trim(), password: $('#pw').value });
     if (error) { err.textContent = 'That email or password didn’t work.'; return; }
-    try { localStorage.removeItem(TOKEN_KEY); S.token = null; await loadBoot('manager'); location.hash = '#/dash'; route(); }
+    try { localStorage.setItem(MODE_KEY, 'manager'); S.token = null; await loadBoot('manager'); location.hash = '#/dash'; route(); }
     catch (x) { err.textContent = 'This login isn’t set up as a manager.'; await sb.auth.signOut(); }
   };
 }
@@ -194,8 +196,8 @@ async function askSignOut() { if (await confirmSheet('Sign out?', 'This signs yo
 async function signOut(expired) {
   if (S.mode === 'staff' && S.token && !expired) { try { await sb.rpc('rota_logout', { p_token: S.token }); } catch (e) { } }
   if (S.mode === 'manager') await sb.auth.signOut();
-  if (S.mode === 'staff') { rotaSet('token', null); rotaSet('me', null); }
-  localStorage.removeItem(TOKEN_KEY); S = { token: null, mode: null, boot: null };
+  if (S.mode === 'staff') { rotaSet('token', null); rotaSet('me', null); localStorage.removeItem(TOKEN_KEY); }
+  localStorage.removeItem(MODE_KEY); S = { token: null, mode: null, boot: null };
   location.hash = ''; showNames();
 }
 

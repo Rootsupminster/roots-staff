@@ -1,5 +1,5 @@
 // Roots Rota: keeps the app itself available offline. Rota data is never cached here.
-const CACHE = 'roots-rota-v5';
+const CACHE = 'roots-rota-v6';
 const FILES = ['./', 'index.html', 'manifest.webmanifest', 'logo.png', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));

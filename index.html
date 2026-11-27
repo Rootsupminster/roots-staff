@@ -257,10 +257,11 @@ function shell(inner){
   return '<header class="top"><img src="logo.png" alt="Roots"><div class="who"><b>'+esc(first(S.me.name))+'</b>'+esc(S.updated||'')+'</div><button class="menu" id="menu" aria-label="Menu">⋯</button></header>'+
     '<main'+(S.wide?' class="wide"':'')+'>'+(S.offline?'<div class="note">You’re offline. Showing the rota as it was last loaded.</div>':'')+inner+'</main>'+
     '<nav class="tabs"><button data-tab="mine" class="'+(S.tab==='mine'?'on':'')+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>My shifts</button>'+
-    '<button data-tab="rota" class="'+(S.tab==='rota'?'on':'')+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Full rota</button></nav>';
+    '<button data-tab="rota" class="'+(S.tab==='rota'?'on':'')+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Full rota</button>'+
+    '<button data-go="checks/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3v3h6V3M9 12l2 2 4-4M9 17h6"/></svg>Checks</button></nav>';
 }
 function bindShell(){
-  app.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>{S.tab=b.dataset.tab;if(S.tab==='rota')S.week=S.week||weekOf(today());showApp();window.scrollTo(0,0);}));
+  app.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.go){location.href=b.dataset.go;return;}S.tab=b.dataset.tab;if(S.tab==='rota')S.week=S.week||weekOf(today());showApp();window.scrollTo(0,0);}));
   app.querySelector('#menu').addEventListener('click',menu);
 }
 function menu(){
@@ -346,7 +347,7 @@ async function showRota(){
 }
 function rangeTxt(ws){const a=parse(ws),b=parse(add(ws,6));return a.getDate()+(a.getMonth()!==b.getMonth()?' '+MON[a.getMonth()]:'')+' – '+b.getDate()+' '+MON[b.getMonth()];}
 async function logout(expired){
-  const t=S.token;S.token=null;S.me=null;store('token');store('me');
+  const t=S.token;S.token=null;S.me=null;store('token');store('me');try{localStorage.removeItem('roots-checks-token');}catch(e){}
   try{Object.keys(localStorage).filter(k=>k.startsWith('r:')).forEach(k=>localStorage.removeItem(k));}catch(e){}
   if(t&&!expired)try{await rpc('rota_logout',{p_token:t});}catch(e){}
   showPeople();

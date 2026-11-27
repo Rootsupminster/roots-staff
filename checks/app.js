@@ -5,6 +5,9 @@
 const SB_URL = 'https://vvhrtizoncwbuynbrczg.supabase.co';
 const SB_KEY = 'sb_publishable_xOqrqL8x9zRexvIXeUZORg_NVw4vOMM';
 const TOKEN_KEY = 'roots-checks-token';
+// The rota app on this same site keeps its sign-in under 'token' and 'me' (JSON). Share it both ways.
+const rotaGet = k => { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } };
+const rotaSet = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, JSON.stringify(v)); } catch (e) { } };
 const BUCKET = 'roots-docs';
 const sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true, storageKey: 'roots-manager-auth' } });
 
@@ -92,7 +95,7 @@ function shell(title, body, tab, opts = {}) {
   const me = S.boot && S.boot.me;
   const nav = S.mode === 'manager'
     ? [['home', '✓', 'Checks', '#/'], ['dash', '▤', 'Overview', '#/dash'], ['records', '☰', 'Records', '#/records'], ['docs', '▣', 'Documents', '#/docs'], ['setup', '⚙︎', 'Setup', '#/setup']]
-    : [['home', '✓', 'Checks', '#/'], ['today-log', '☰', 'Today', '#/today-log'], ['docs', '▣', 'Documents', '#/docs'], ['me', '◯', 'Sign out', 'signout']];
+    : [['home', '✓', 'Checks', '#/'], ['today-log', '☰', 'Today', '#/today-log'], ['docs', '▣', 'Documents', '#/docs'], ['rota', '▦', 'Rota', 'rota'], ['me', '◯', 'Sign out', 'signout']];
   return '<header class="top">' + (opts.back ? '<button class="back" data-back="' + esc(opts.back) + '" aria-label="Back">‹</button><h1>' + esc(title) + '</h1>'
     : '<img class="logo" src="logo-white.png" alt="Roots">') +
     (opts.back ? '' : '<div class="who">' + (me ? (S.mode === 'manager' ? 'Manager' : 'Signed in') + '<b>' + esc(me.name) + '</b>' : '') + '</div>') + '</header>' +
@@ -101,21 +104,21 @@ function shell(title, body, tab, opts = {}) {
 }
 document.addEventListener('click', e => {
   const n = e.target.closest('[data-nav]');
-  if (n) { const v = n.dataset.nav; if (v === 'signout') return askSignOut(); go(v); return; }
+  if (n) { const v = n.dataset.nav; if (v === 'signout') return askSignOut(); if (v === 'rota') { location.href = '../'; return; } go(v); return; }
   const b = e.target.closest('[data-back]'); if (b) { go(b.dataset.back); return; }
   const g = e.target.closest('[data-go]'); if (g) go(g.dataset.go);
 });
 
 // ---------- sign in ----------
 async function start() {
-  S.token = localStorage.getItem(TOKEN_KEY);
+  S.token = localStorage.getItem(TOKEN_KEY) || rotaGet('token');
   const { data } = await sb.auth.getSession();
   const wantStaff = !!S.token;
   if (!wantStaff && data.session) {
     try { await loadBoot('manager'); return route(); } catch (e) { /* not a manager */ }
   }
   if (wantStaff) {
-    try { await loadBoot('staff'); return route(); } catch (e) { localStorage.removeItem(TOKEN_KEY); S.token = null; }
+    try { await loadBoot('staff'); localStorage.setItem(TOKEN_KEY, S.token); return route(); } catch (e) { localStorage.removeItem(TOKEN_KEY); S.token = null; }
   }
   showNames();
 }
@@ -165,7 +168,7 @@ function showPin(p) {
           err.textContent = r.error === 'locked' ? 'Too many tries. Wait ' + r.wait + ' minutes or ask a manager.' : r.error === 'pin' ? 'Wrong PIN. ' + r.left + ' tries left.' : 'Can’t sign in. Ask a manager.';
           pin = ''; paint(); dots.classList.add('shake'); setTimeout(() => dots.classList.remove('shake'), 400); return;
         }
-        S.token = r.token; localStorage.setItem(TOKEN_KEY, r.token);
+        S.token = r.token; localStorage.setItem(TOKEN_KEY, r.token); rotaSet('token', r.token); rotaSet('me', { id: r.id, name: r.name });
         await loadBoot('staff'); location.hash = '#/'; route();
       } catch (e) { err.textContent = errMsg(e); pin = ''; paint(); }
     }
@@ -187,10 +190,11 @@ function showManagerLogin() {
     catch (x) { err.textContent = 'This login isn’t set up as a manager.'; await sb.auth.signOut(); }
   };
 }
-async function askSignOut() { if (await confirmSheet('Sign out?', 'You’ll need your PIN to sign back in.', 'Sign out')) signOut(); }
+async function askSignOut() { if (await confirmSheet('Sign out?', 'This signs you out of the rota too. You’ll need your PIN to sign back in.', 'Sign out')) signOut(); }
 async function signOut(expired) {
   if (S.mode === 'staff' && S.token && !expired) { try { await sb.rpc('rota_logout', { p_token: S.token }); } catch (e) { } }
   if (S.mode === 'manager') await sb.auth.signOut();
+  if (S.mode === 'staff') { rotaSet('token', null); rotaSet('me', null); }
   localStorage.removeItem(TOKEN_KEY); S = { token: null, mode: null, boot: null };
   location.hash = ''; showNames();
 }
